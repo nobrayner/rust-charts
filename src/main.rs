@@ -15,7 +15,7 @@ pub fn main() {
       (
         "middle",
         lib::State {
-          on: Some(vec![("END", "endd")]),
+          on: Some(vec![("END", "end")]),
           on_enter: None,
           on_exit: None,
         },
