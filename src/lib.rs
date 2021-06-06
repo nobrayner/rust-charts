@@ -1,14 +1,5 @@
 use std::collections::HashMap;
 
-// pub struct GuardedTransition<'a> {
-//     target: &'a str,
-//     guard: dyn Fn() -> bool
-// }
-
-// pub enum Transition<'a> {
-//     State(&'a str),
-// }
-
 struct StateNode<'a> {
     on: Option<HashMap<&'a str, &'a str>>,
     on_enter: Option<Box<dyn Fn() -> ()>>,
@@ -26,7 +17,6 @@ pub struct State<'a> {
     pub on_exit: Option<Box<dyn Fn() -> ()>>,
 }
 
-#[derive(Debug)]
 pub struct Machine<'a> {
     current_state: &'a str,
     states: HashMap<&'a str, StateNode<'a>>,
