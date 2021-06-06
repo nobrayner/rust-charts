@@ -15,7 +15,7 @@ pub fn main() {
       (
         "middle",
         lib::State {
-          on: Some(vec![("END", "end")]),
+          on: Some(vec![("END", "endd")]),
           on_enter: None,
           on_exit: None,
         },
@@ -31,6 +31,6 @@ pub fn main() {
     ],
   );
 
-  machine.send("WRONG");
+  machine.send("MIDDLE");
   machine.send("END");
 }

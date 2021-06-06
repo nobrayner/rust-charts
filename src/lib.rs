@@ -56,23 +56,32 @@ impl Machine<'_> {
         }
     }
 
-    pub fn send(&mut self, event: &str) -> () {
+    pub fn send(&mut self, event: &str) -> Option<()> {
         let exiting_state = &self.states.get(&self.current_state).unwrap();
         let on_exit = exiting_state.on_exit.as_ref();
 
-        let entering_state = exiting_state.on.as_ref().unwrap().get(event);
+        let entering_state = exiting_state.on.as_ref()?.get(event)?;
 
-        if entering_state.is_some() {
-            let entering_state = entering_state.unwrap();
+        let on_enter = match &self.states.get(entering_state) {
+            Some(state) => state.on_enter.as_ref(),
+            None => panic!(
+                "Provided invalid state \"{}\". Possible options were: {:?}",
+                entering_state,
+                &self.states.keys()
+            ),
+        };
 
-            let on_enter = &self.states.get(entering_state).unwrap().on_enter.as_ref();
-            if on_exit.is_some() {
-                on_exit.unwrap()();
-            }
-            if on_enter.is_some() {
-                on_enter.unwrap()();
-            }
-            self.current_state = entering_state;
+        // Run exit/enter
+        if on_exit.is_some() {
+            on_exit.unwrap()();
         }
+        if on_enter.is_some() {
+            on_enter.unwrap()();
+        }
+
+        // Update state
+        self.current_state = entering_state;
+
+        Some(())
     }
 }
