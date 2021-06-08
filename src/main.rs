@@ -1,13 +1,22 @@
 mod lib;
 
 pub fn main() {
-  let mut machine = lib::Machine::new(
-    "start",
-    vec![
+  let test_machine = lib::MachineConfig {
+    initial: "start",
+    states: vec![
       (
         "start",
         lib::State {
-          on: Some(vec![("MIDDLE", "middle"), ("END", "end")]),
+          on: Some(vec![
+            (
+              "MIDDLE",
+              lib::Transition::GuardedTransition(lib::GuardedTransition {
+                target: "middle",
+                guard: Box::new(|| true),
+              }),
+            ),
+            ("END", lib::Transition::Transition("end")),
+          ]),
           on_enter: Some(Box::new(|| println!("Entering start!"))),
           on_exit: Some(Box::new(|| println!("Exiting start..."))),
         },
@@ -15,7 +24,7 @@ pub fn main() {
       (
         "middle",
         lib::State {
-          on: Some(vec![("END", "end")]),
+          on: Some(vec![("END", lib::Transition::Transition("end"))]),
           on_enter: None,
           on_exit: None,
         },
@@ -29,7 +38,9 @@ pub fn main() {
         },
       ),
     ],
-  );
+  };
+
+  let mut machine = lib::Machine::interpret(test_machine);
 
   machine.send("MIDDLE");
   machine.send("END");

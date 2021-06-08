@@ -1,7 +1,39 @@
 use std::collections::HashMap;
 
-struct StateNode<'a> {
-  on: Option<HashMap<&'a str, &'a str>>,
+pub struct GuardedTransition<'transition> {
+  pub target: &'transition str,
+  pub guard: Box<dyn Fn() -> bool>,
+}
+impl std::fmt::Debug for GuardedTransition<'_> {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    f.debug_struct("Transition")
+      .field("target", &self.target)
+      .finish()
+  }
+}
+
+#[derive(Debug)]
+pub enum Transition<'transition> {
+  Transition(&'transition str),
+  GuardedTransition(GuardedTransition<'transition>),
+}
+impl<'a> Transition<'a> {
+  pub fn target(&self) -> &'a str {
+    match &self {
+      Transition::Transition(str) => &str,
+      Transition::GuardedTransition(transition) => &transition.target,
+    }
+  }
+}
+
+pub struct State<'state> {
+  pub on: Option<Vec<(&'state str, Transition<'state>)>>,
+  pub on_enter: Option<Box<dyn Fn() -> ()>>,
+  pub on_exit: Option<Box<dyn Fn() -> ()>>,
+}
+
+struct StateNode<'node> {
+  on: Option<HashMap<&'node str, Transition<'node>>>,
   on_enter: Option<Box<dyn Fn() -> ()>>,
   on_exit: Option<Box<dyn Fn() -> ()>>,
 }
@@ -11,20 +43,19 @@ impl std::fmt::Debug for StateNode<'_> {
   }
 }
 
-pub struct State<'a> {
-  pub on: Option<Vec<(&'a str, &'a str)>>,
-  pub on_enter: Option<Box<dyn Fn() -> ()>>,
-  pub on_exit: Option<Box<dyn Fn() -> ()>>,
+pub struct MachineConfig<'config> {
+  pub initial: &'config str,
+  pub states: Vec<(&'config str, State<'config>)>,
 }
 
-pub struct Machine<'a> {
-  current_state: &'a str,
-  states: HashMap<&'a str, StateNode<'a>>,
+pub struct Machine<'machine> {
+  current_state: &'machine str,
+  states: HashMap<&'machine str, StateNode<'machine>>,
 }
-
-impl Machine<'_> {
-  pub fn new<'a>(initial: &'a str, states: Vec<(&'a str, State<'a>)>) -> Machine<'a> {
-    let states: HashMap<&str, StateNode> = states
+impl<'machine> Machine<'machine> {
+  pub fn interpret(config: MachineConfig<'machine>) -> Self {
+    let states: HashMap<_, _> = config
+      .states
       .into_iter()
       .map(|(state_name, state_config)| {
         let transition_config = state_config.on;
@@ -44,30 +75,30 @@ impl Machine<'_> {
       })
       .collect();
 
-    let on_enter = states.get(initial).unwrap().on_enter.as_ref();
+    let on_enter = states.get(config.initial).unwrap().on_enter.as_ref();
 
     if on_enter.is_some() {
       on_enter.unwrap()();
     }
 
-    Machine {
-      current_state: initial,
+    Self {
+      current_state: config.initial,
       states,
     }
   }
 
   pub fn send(&mut self, event: &str) -> Option<()> {
-    let exiting_state = &self.states.get(&self.current_state).unwrap();
+    let exiting_state = self.states.get(self.current_state).unwrap();
     let on_exit = exiting_state.on_exit.as_ref();
 
-    let entering_state = exiting_state.on.as_ref()?.get(event)?;
+    let entering_state = exiting_state.on.as_ref()?.get(event)?.target();
 
-    let on_enter = match &self.states.get(entering_state) {
+    let on_enter = match self.states.get(entering_state) {
       Some(state) => state.on_enter.as_ref(),
       None => panic!(
         "Provided invalid state \"{}\". Possible options were: {:?}",
         entering_state,
-        &self.states.keys()
+        self.states.keys()
       ),
     };
 
