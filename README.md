@@ -16,6 +16,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <table>
   <tr>
     <td align="center"><a href="https://github.com/nobrayner"><img src="https://avatars.githubusercontent.com/u/40751395?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Braydon Hall</b></sub></a><br /><a href="https://github.com/nobrayner/rust-charts/commits?author=nobrayner" title="Code">💻</a> <a href="#ideas-nobrayner" title="Ideas, Planning, & Feedback">🤔</a></td>
+    <td align="center"><a href="https://github.com/underscorefunk"><img src="https://avatars.githubusercontent.com/u/4334829?v=4?s=100" width="100px;" alt=""/><br /><sub><b>John Funk</b></sub></a><br /><a href="#ideas-underscorefunk" title="Ideas, Planning, & Feedback">🤔</a></td>
   </tr>
 </table>
 
