@@ -28,10 +28,10 @@ impl fmt::Debug for Machine {
 }
 impl Machine {
   pub fn transition(&self, state: State, event: String) -> State {
-    State {}
+    State::new()
   }
   pub fn state_from(&self, state_value: String) -> State {
-    State {}
+    State::new()
   }
   pub fn initial_state(&self) {}
 
