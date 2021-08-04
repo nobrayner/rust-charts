@@ -1,12 +1,8 @@
-use crate::{
-  action::Action,
-  machine::{Machine, MachineConfig},
-  transition::Transition,
-};
+use crate::{action::Action, machine::Machine, transition::Transition};
 use std::{collections::HashMap, fmt};
 
 #[derive(Debug)]
-enum StateKind {
+enum Kind {
   Atomic,
   Compound,
   Parallel,
@@ -31,9 +27,9 @@ pub struct StateNode {
   exit: Vec<Action>,
   // No idea what type this really is... It is just Optional[Dict] in the Python source
   done_data: Option<HashMap<String, String>>,
-  kind: StateKind,
+  kind: Kind,
   transitions: Vec<Transition>,
-  id: String,
+  pub(crate) id: String,
   key: String,
   states: HashMap<String, Box<StateNode>>,
 }
@@ -52,7 +48,7 @@ impl StateNode {
       entry: vec![],
       exit: vec![],
       done_data: None,
-      kind: StateKind::Atomic,
+      kind: Kind::Atomic,
       transitions: vec![],
       id: String::from(""),
       key: String::from(""),
