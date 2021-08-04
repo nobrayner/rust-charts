@@ -4,7 +4,7 @@ use std::fmt;
 use crate::{action::Action, state::State, state_node::StateNode};
 
 #[derive(Debug)]
-struct MachineConfig {}
+pub struct MachineConfig {}
 
 pub struct Machine {
   id: String,
@@ -44,6 +44,19 @@ impl Machine {
     self.id_map.get(id)
   }
   fn get_configuration(&self, state_value: String, parent: Option<StateNode>) -> Vec<StateNode> {
-    vec![StateNode {}]
+    vec![StateNode::new()]
+  }
+}
+// Delete when properly typed
+impl Machine {
+  pub fn new() -> Self {
+    Self {
+      id: String::from(""),
+      root: StateNode::new(),
+      id_map: HashMap::new(),
+      config: MachineConfig {},
+      states: HashMap::new(),
+      actions: vec![],
+    }
   }
 }

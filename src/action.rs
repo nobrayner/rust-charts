@@ -10,3 +10,12 @@ impl fmt::Debug for Action {
     f.debug_struct("Action").field("type", &self.kind).finish()
   }
 }
+impl Action {
+  pub fn new() -> Self {
+    Self {
+      kind: String::from(""),
+      exec: Box::new(|| ()),
+      data: HashMap::new(),
+    }
+  }
+}
