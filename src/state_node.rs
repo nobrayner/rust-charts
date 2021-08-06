@@ -1,8 +1,8 @@
 use crate::{action::Action, machine::Machine, transition::Transition};
-use std::{collections::HashMap, fmt};
+use std::{collections::HashMap, fmt, rc::Rc};
 
 #[derive(Debug)]
-enum Kind {
+pub enum Kind {
   Atomic,
   Compound,
   Parallel,
@@ -14,24 +14,21 @@ This has a fair bit of recursion inside it... The best solution is most likely t
 and only store the ids (index) of the StateNodes in each strcut. This way it can be looked up, but not have to
 worry about lifetimes as much (though there still needs to be a link from StateNode <-> Machine)
  */
-pub struct StateNode {
-  on: HashMap<String, Vec<Transition>>,
-  // This should most likely be a reference,
-  // as we can't own the machine in the StateNode(s).
-  // Use Box for now as it is easier to type everything out for now
-  machine: Box<Machine>,
+pub(crate) struct StateNode {
+  pub(crate) on: HashMap<String, Vec<Transition>>,
+  pub(crate) machine: Rc<Machine>,
   // Same here
-  parent: Option<Box<StateNode>>,
-  initial: Option<Transition>,
-  entry: Vec<Action>,
-  exit: Vec<Action>,
+  pub(crate) parent: Option<String>,
+  pub(crate) initial: Option<Transition>,
+  pub(crate) entry: Vec<Action>,
+  pub(crate) exit: Vec<Action>,
   // No idea what type this really is... It is just Optional[Dict] in the Python source
-  done_data: Option<HashMap<String, String>>,
-  kind: Kind,
-  transitions: Vec<Transition>,
+  pub(crate) done_data: Option<HashMap<String, String>>,
+  pub(crate) kind: Kind,
+  pub(crate) transitions: Vec<Transition>,
   pub(crate) id: String,
-  key: String,
-  states: HashMap<String, Box<StateNode>>,
+  pub(crate) key: String,
+  pub(crate) states: HashMap<String, String>,
 }
 impl fmt::Debug for StateNode {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -42,7 +39,7 @@ impl StateNode {
   pub fn new() -> Self {
     StateNode {
       on: HashMap::new(),
-      machine: Box::new(Machine::new()),
+      machine: Machine::stub(),
       parent: None,
       initial: None,
       entry: vec![],
