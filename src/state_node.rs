@@ -1,5 +1,5 @@
 use crate::{action::Action, machine::Machine, transition::Transition};
-use std::{collections::HashMap, fmt, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, fmt, rc::Rc};
 
 #[derive(Debug)]
 pub enum Kind {
@@ -14,10 +14,9 @@ This has a fair bit of recursion inside it... The best solution is most likely t
 and only store the ids (index) of the StateNodes in each strcut. This way it can be looked up, but not have to
 worry about lifetimes as much (though there still needs to be a link from StateNode <-> Machine)
  */
-pub(crate) struct StateNode {
+pub struct StateNode {
   pub(crate) on: HashMap<String, Vec<Transition>>,
-  pub(crate) machine: Rc<Machine>,
-  // Same here
+  pub(crate) machine: Rc<RefCell<Machine>>,
   pub(crate) parent: Option<String>,
   pub(crate) initial: Option<Transition>,
   pub(crate) entry: Vec<Action>,

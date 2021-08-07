@@ -1,11 +1,11 @@
-use std::{collections::HashMap, fmt, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, fmt, rc::Rc};
 
 use crate::{action::Action, state::State, state_node, state_node::StateNode};
 
 #[derive(Debug)]
 pub struct MachineConfig<'mc> {
-  id: &'mc str,
-  states: Vec<(&'mc str, &'mc str)>,
+  pub id: &'mc str,
+  pub states: Vec<(&'mc str, &'mc str)>,
 }
 
 pub struct Machine {
@@ -27,23 +27,25 @@ impl fmt::Debug for Machine {
 }
 impl Machine {
   // DELTE BELOW ONCE DONE
-  pub fn stub() -> Rc<Self> {
-    Rc::new(Self {
+  pub fn stub() -> Rc<RefCell<Self>> {
+    Rc::new(RefCell::new(Self {
       id: String::from(""),
       root: String::from(""),
       states: HashMap::new(),
-    })
+    }))
   }
   // DELETE ABOVE ONCE DONE
-  pub fn new(config: MachineConfig) -> Rc<Self> {
-    let machine = Rc::new(Self {
+  pub fn new(config: MachineConfig) -> Rc<RefCell<Self>> {
+    let machine = Rc::new(RefCell::new(Self {
       id: String::from(config.id),
       root: String::from(config.id),
       states: HashMap::new(),
       // actions: vec![],
-    });
+    }));
 
-    state_vec_to_map(&machine, config.states, None);
+    let state_map = states_vec_to_map(Rc::clone(&machine), config.states, None);
+
+    machine.borrow_mut().states = state_map;
 
     machine
   }
@@ -59,7 +61,6 @@ impl Machine {
   fn get_actions(&self, actions: Vec<Action>) -> (Vec<Box<dyn Fn()>>, Vec<String>) {
     (vec![Box::new(|| {})], vec![])
   }
-  fn register(&self, state_node: StateNode) {}
   fn get_by_id(&self, id: &str) -> Option<&StateNode> {
     self.states.get(id)
   }
@@ -68,14 +69,14 @@ impl Machine {
   }
 }
 
-fn state_vec_to_map(
-  machine: &Rc<Machine>,
+fn states_vec_to_map(
+  machine: Rc<RefCell<Machine>>,
   states: Vec<(&str, &str)>,
   parent: Option<String>,
 ) -> HashMap<String, StateNode> {
   states
     .into_iter()
-    .fold(HashMap::new(), |mut acc, (id, to)| {
+    .fold(HashMap::new(), |mut acc, (id, _to)| {
       let current_id = match parent.clone() {
         Some(parent_id) => parent_id + "." + id,
         None => String::from(id),

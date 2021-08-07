@@ -4,3 +4,5 @@ mod machine;
 mod state;
 mod state_node;
 mod transition;
+
+pub use machine::{Machine, MachineConfig};
