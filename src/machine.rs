@@ -1,11 +1,16 @@
 use std::{cell::RefCell, collections::HashMap, fmt, rc::Rc};
 
-use crate::{action::Action, state::State, state_node, state_node::StateNode};
+use crate::{
+  action::Action,
+  state::State,
+  state_node::StateNode,
+  state_node::{self, StateNodeConfig},
+};
 
 #[derive(Debug)]
 pub struct MachineConfig<'mc> {
   pub id: &'mc str,
-  pub states: Vec<(&'mc str, &'mc str)>,
+  pub states: Vec<StateNodeConfig<'mc>>,
 }
 
 pub struct Machine {
@@ -19,14 +24,12 @@ impl fmt::Debug for Machine {
     f.debug_struct("Machine")
       .field("id", &self.id)
       .field("root", &self.root)
-      // .field("config", &self.config)
       .field("states", &self.states)
       // .field("actions", &self.actions.len())
       .finish()
   }
 }
 impl Machine {
-  // DELTE BELOW ONCE DONE
   pub fn stub() -> Rc<RefCell<Self>> {
     Rc::new(RefCell::new(Self {
       id: String::from(""),
@@ -34,7 +37,6 @@ impl Machine {
       states: HashMap::new(),
     }))
   }
-  // DELETE ABOVE ONCE DONE
   pub fn new(config: MachineConfig) -> Rc<RefCell<Self>> {
     let machine = Rc::new(RefCell::new(Self {
       id: String::from(config.id),
@@ -42,8 +44,25 @@ impl Machine {
       states: HashMap::new(),
       // actions: vec![],
     }));
+    // Root node
+    machine.borrow_mut().states.insert(
+      String::from(config.id),
+      StateNode {
+        id: String::from(config.id),
+        key: String::from(config.id),
+        machine: Rc::clone(&machine),
+        parent: None,
+        kind: state_node::Kind::Atomic,
+        on: HashMap::new(),
+        entry: vec![],
+        exit: vec![],
+        done_data: None,
+        transitions: vec![],
+        states: HashMap::new(),
+      },
+    );
 
-    let state_map = states_vec_to_map(Rc::clone(&machine), config.states, None);
+    let state_map = states_vec_to_map(Rc::clone(&machine), config.states, String::from(config.id));
 
     machine.borrow_mut().states = state_map;
 
@@ -71,37 +90,37 @@ impl Machine {
 
 fn states_vec_to_map(
   machine: Rc<RefCell<Machine>>,
-  states: Vec<(&str, &str)>,
-  parent: Option<String>,
+  states: Vec<StateNodeConfig>,
+  parent: String,
 ) -> HashMap<String, StateNode> {
-  states
-    .into_iter()
-    .fold(HashMap::new(), |mut acc, (id, _to)| {
-      let current_id = match parent.clone() {
-        Some(parent_id) => parent_id + "." + id,
-        None => String::from(id),
-      };
+  states.into_iter().fold(HashMap::new(), |mut acc, s| {
+    let current_id = parent.clone() + "." + s.id;
 
-      acc.insert(
-        current_id.clone(),
-        StateNode {
-          id: current_id.clone(),
-          key: String::from(id),
-          machine: Rc::clone(&machine),
-          parent: parent.clone(),
-          kind: state_node::Kind::Atomic,
-          on: HashMap::new(),
-          initial: None,
-          entry: vec![],
-          exit: vec![],
-          done_data: None,
-          transitions: vec![],
-          states: HashMap::new(),
-        },
-      );
+    acc.insert(
+      current_id.clone(),
+      StateNode {
+        id: current_id.clone(),
+        key: String::from(s.id),
+        machine: Rc::clone(&machine),
+        parent: Some(parent.clone()),
+        kind: state_node::Kind::Atomic,
+        on: HashMap::new(),
+        // Convert config/input into a list of actions
+        entry: vec![],
+        // Convert config/input into a list of actions
+        exit: vec![],
+        done_data: None,
+        transitions: vec![],
+        states: HashMap::new(),
+      },
+    );
 
-      // acc.extend(state_vec_to_map(s.states, Some(String::from(s.id))));
+    acc.extend(states_vec_to_map(
+      Rc::clone(&machine),
+      s.states,
+      String::from(s.id),
+    ));
 
-      acc
-    })
+    acc
+  })
 }

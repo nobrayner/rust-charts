@@ -6,3 +6,4 @@ mod state_node;
 mod transition;
 
 pub use machine::{Machine, MachineConfig};
+pub use state_node::{Kind as StateNodeKind, StateNodeConfig};

@@ -9,6 +9,16 @@ pub enum Kind {
   Final,
 }
 
+#[derive(Debug)]
+pub struct StateNodeConfig<'s> {
+  pub id: &'s str,
+  pub kind: Kind,
+  pub on: Vec<(&'s str, &'s str)>,
+  pub initial: Option<&'s str>,
+  pub states: Vec<StateNodeConfig<'s>>,
+  pub on_done: Option<&'s str>,
+}
+
 /*
 This has a fair bit of recursion inside it... The best solution is most likely to contain a map of all states,
 and only store the ids (index) of the StateNodes in each strcut. This way it can be looked up, but not have to
@@ -18,7 +28,6 @@ pub struct StateNode {
   pub(crate) on: HashMap<String, Vec<Transition>>,
   pub(crate) machine: Rc<RefCell<Machine>>,
   pub(crate) parent: Option<String>,
-  pub(crate) initial: Option<Transition>,
   pub(crate) entry: Vec<Action>,
   pub(crate) exit: Vec<Action>,
   // No idea what type this really is... It is just Optional[Dict] in the Python source
@@ -40,7 +49,6 @@ impl StateNode {
       on: HashMap::new(),
       machine: Machine::stub(),
       parent: None,
-      initial: None,
       entry: vec![],
       exit: vec![],
       done_data: None,
@@ -54,8 +62,8 @@ impl StateNode {
   pub fn get_actions(&self /* action: ??? */) -> Action {
     Action::new()
   }
-  pub fn initial(&self) -> Transition {
-    Transition::new()
+  pub fn initial(&self) -> Option<Transition> {
+    Some(Transition::new())
   }
   fn get_relative(&self, target: String) -> Self {
     Self::new()
