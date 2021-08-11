@@ -26,7 +26,6 @@ worry about lifetimes as much (though there still needs to be a link from StateN
  */
 pub struct StateNode {
   pub(crate) on: HashMap<String, Vec<Transition>>,
-  pub(crate) machine: Rc<RefCell<Machine>>,
   pub(crate) parent: Option<String>,
   pub(crate) entry: Vec<Action>,
   pub(crate) exit: Vec<Action>,
@@ -36,18 +35,21 @@ pub struct StateNode {
   pub(crate) transitions: Vec<Transition>,
   pub(crate) id: String,
   pub(crate) key: String,
-  pub(crate) states: HashMap<String, String>,
+  pub(crate) states: Vec<String>,
 }
 impl fmt::Debug for StateNode {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    f.debug_struct("StateNode").field("id", &self.id).finish()
+    f.debug_struct("StateNode")
+      .field("id", &self.id)
+      .field("states", &self.states)
+      .finish()
+    // f.write_str(&format!("<StateNode \"{}\">", &self.id))
   }
 }
 impl StateNode {
   pub fn new() -> Self {
     StateNode {
       on: HashMap::new(),
-      machine: Machine::stub(),
       parent: None,
       entry: vec![],
       exit: vec![],
@@ -56,7 +58,7 @@ impl StateNode {
       transitions: vec![],
       id: String::from(""),
       key: String::from(""),
-      states: HashMap::new(),
+      states: vec![],
     }
   }
   pub fn get_actions(&self /* action: ??? */) -> Action {

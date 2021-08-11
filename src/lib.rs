@@ -1,4 +1,5 @@
 mod action;
+mod algorithm;
 mod event;
 mod machine;
 mod state;
