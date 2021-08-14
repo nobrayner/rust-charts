@@ -2,12 +2,11 @@ use std::{
   collections::{HashMap, HashSet},
   fmt,
   iter::FromIterator,
-  ops::Index,
 };
 
 use crate::{
   action::Action,
-  // algorithm::get_state_value,
+  algorithm::enter_states,
   state::State,
   state_node::StateNode,
   state_node::{self, StateNodeConfig},
@@ -23,7 +22,7 @@ pub struct Machine {
   id: String,
   root: String,
   pub states: HashMap<String, StateNode>,
-  // actions: Vec<Box<dyn Fn()>>,
+  actions: Vec<Box<dyn Fn()>>,
 }
 impl fmt::Debug for Machine {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -47,7 +46,7 @@ impl Machine {
       id: String::from(config.id),
       root: String::from(config.id),
       states: HashMap::new(),
-      // actions: vec![],
+      actions: vec![],
     };
     // Root node
     let root_states = &config.states;
@@ -62,10 +61,10 @@ impl Machine {
         entry: vec![],
         exit: vec![],
         done_data: None,
-        transitions: vec![],
+        transitions: vec![], // .sort_by(|a, b| a.order.cmp(&b.order)),
         states: root_states
           .into_iter()
-          .map(|s| String::from(s.id))
+          .map(|s| (String::from(s.id), String::from(config.id) + s.id))
           .collect(),
       },
     );
@@ -81,29 +80,51 @@ impl Machine {
     State::stub()
   }
 
-  pub fn state_from(&self, state_value: Vec<&str>) -> State {
-    let state_values = self.get_state_values(state_value, None);
-
+  pub fn state_from(&self, state_values: Vec<&str>) -> State {
     State {
       context: HashMap::new(),
-      value: state_values,
+      value: self.get_state_values(state_values.into_iter().map(String::from).collect(), None),
+      actions: vec![],
     }
   }
 
-  pub fn initial_state(&self) -> State {
-    State::stub()
+  pub fn initial_state(&mut self) -> State {
+    let state_map = &mut self.states;
+
+    let (configuration, actions, internal_queue) = enter_states(
+      state_map,
+      vec![state_map.get(&self.root).unwrap().initial()],
+      vec![],
+      vec![],
+      &HashMap::new(),
+      vec![],
+      vec![],
+    );
+
+    // let (configuration, actions) = macrostep(&self.states, configuration, actions, internal_queue);
+
+    // let (actions, warnings) = self.get_actions(actions);
+    // for w in warnings {
+    //   println!("{}", w);
+    // }
+
+    State {
+      value: self.get_state_values(configuration, None),
+      context: HashMap::new(),
+      actions,
+    }
   }
 
   // Internal
-  fn get_actions(&self, actions: Vec<Action>) -> (Vec<Box<dyn Fn()>>, Vec<String>) {
-    (vec![Box::new(|| {})], vec![])
+  fn get_actions(&self, actions: Vec<Action>) -> (Vec<Action>, Vec<String>) {
+    (vec![], vec![])
   }
 
   fn get_by_id(&self, id: &str) -> Option<&StateNode> {
     self.states.get(id)
   }
 
-  fn get_state_values(&self, state_values: Vec<&str>, parent: Option<String>) -> Vec<String> {
+  fn get_state_values(&self, state_values: Vec<String>, parent: Option<String>) -> Vec<String> {
     let parent = match parent {
       Some(p) => p,
       None => self.root.clone(),
@@ -112,7 +133,7 @@ impl Machine {
     let states: HashSet<_> = state_values
       .into_iter()
       .map(|s| {
-        let potential_state = if s.starts_with(&*parent) {
+        let potential_state = if s.starts_with(&parent) {
           String::from(&s[parent.len() + 1..])
         } else {
           String::from(s)
@@ -150,10 +171,10 @@ fn states_vec_to_map(states: Vec<StateNodeConfig>, parent: String) -> HashMap<St
         // Convert config/input into a list of actions
         exit: vec![],
         done_data: None,
-        transitions: vec![],
+        transitions: vec![], // .sort_by(|a, b| a.order.cmp(&b.order)),
         states: child_states
           .into_iter()
-          .map(|s| current_id.clone() + s.id)
+          .map(|s| (String::from(s.id), current_id.clone() + s.id))
           .collect(),
       },
     );

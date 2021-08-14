@@ -1,5 +1,5 @@
-use crate::{action::Action, machine::Machine, transition::Transition};
-use std::{cell::RefCell, collections::HashMap, fmt, rc::Rc};
+use crate::{action::Action, transition::Transition};
+use std::{collections::HashMap, fmt};
 
 #[derive(Debug)]
 pub enum Kind {
@@ -7,6 +7,7 @@ pub enum Kind {
   Compound,
   Parallel,
   Final,
+  History,
 }
 
 #[derive(Debug)]
@@ -19,11 +20,6 @@ pub struct StateNodeConfig<'s> {
   pub on_done: Option<&'s str>,
 }
 
-/*
-This has a fair bit of recursion inside it... The best solution is most likely to contain a map of all states,
-and only store the ids (index) of the StateNodes in each strcut. This way it can be looked up, but not have to
-worry about lifetimes as much (though there still needs to be a link from StateNode <-> Machine)
- */
 pub struct StateNode {
   pub(crate) on: HashMap<String, Vec<Transition>>,
   pub(crate) parent: Option<String>,
@@ -35,15 +31,16 @@ pub struct StateNode {
   pub(crate) transitions: Vec<Transition>,
   pub(crate) id: String,
   pub(crate) key: String,
-  pub(crate) states: Vec<String>,
+  // A map of node keys, to node ids: HashMap<key, id>
+  pub(crate) states: HashMap<String, String>,
 }
 impl fmt::Debug for StateNode {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    f.debug_struct("StateNode")
-      .field("id", &self.id)
-      .field("states", &self.states)
-      .finish()
-    // f.write_str(&format!("<StateNode \"{}\">", &self.id))
+    // f.debug_struct("StateNode")
+    //   .field("id", &self.id)
+    //   .field("states", &self.states)
+    //   .finish()
+    f.write_str(&format!("<StateNode \"{}\">", &self.id))
   }
 }
 impl StateNode {
@@ -58,7 +55,7 @@ impl StateNode {
       transitions: vec![],
       id: String::from(""),
       key: String::from(""),
-      states: vec![],
+      states: HashMap::new(),
     }
   }
   pub fn get_actions(&self /* action: ??? */) -> Action {

@@ -66,7 +66,34 @@ fn light_machine() -> Machine {
 }
 
 // #[test]
-// pub fn test_machine() {
+// pub fn machine_initial_state() {
+//   let mut lights = light_machine();
+
+//   assert_eq!(lights.initial_state().value, vec!["green"]);
+// }
+
+#[test]
+pub fn state_from() {
+  let lights = light_machine();
+
+  let yellow_state = lights.state_from(vec!["yellow"]);
+
+  assert_eq!(yellow_state.value, vec!["yellow"]);
+}
+
+// #[test]
+// pub fn final_state() {
+//   let lights = light_machine();
+
+//   let red_stop_state = lights.state_from(vec!["red.stop"]);
+
+//   let red_timeout_state = lights.transition(red_stop_state, "TIMEOUT");
+
+//   assert_eq!(red_timeout_state.value, vec![String::from("green")]);
+// }
+
+// #[test]
+// pub fn machine() {
 //   let lights = light_machine();
 
 //   let yellow_state = lights.transition(lights.initial_state(), "TIMER");
@@ -76,29 +103,4 @@ fn light_machine() -> Machine {
 //   let red_state = lights.transition(yellow_state, "TIMER");
 
 //   assert_eq!(red_state.value, "red.walk");
-// }
-
-// #[test]
-// pub fn test_machine_initial_state() {
-//   assert_eq!(LIGHTS_MACHINE.initial_state().value, "green");
-// }
-
-#[test]
-pub fn test_state_from() {
-  let lights = light_machine();
-
-  let yellow_state = lights.state_from(vec!["yellow"]);
-
-  assert_eq!(yellow_state.value, vec![String::from("yellow")]);
-}
-
-// #[test]
-// pub fn test_final_state() {
-//   let lights = light_machine();
-
-//   let red_stop_state = lights.state_from(vec!["red.stop"]);
-
-//   let red_timeout_state = lights.transition(red_stop_state, "TIMEOUT");
-
-//   assert_eq!(red_timeout_state.value, vec![String::from("green")]);
 // }

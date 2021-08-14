@@ -1,40 +1,33 @@
 use std::fmt;
 
-use crate::{action::Action, event::Event, state_node::StateNode};
+use crate::{action::Action, event::Event};
 
 pub struct TransitionConfig {
   target: Vec<String>,
 }
 
 #[derive(Debug)]
-enum Kind {
+pub(crate) enum Kind {
   External,
   Internal,
 }
 
 pub struct Transition {
-  event: String,
-  source: Box<StateNode>,
+  pub(crate) event: String,
+  pub(crate) source: String,
   // The actual type is: String | StateNode | TransitionConfig
   config: TransitionConfig,
   actions: Vec<Action>,
   cond: Option<Box<dyn Fn(/* context type */ Event) -> bool>>,
-  order: i32,
-  kind: Kind,
+  pub(crate) order: i32,
+  pub(crate) kind: Kind,
 }
 impl fmt::Debug for Transition {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     f.debug_struct("Transition")
       .field("event", &self.event)
-      .field("source", &self.source.id)
-      .field(
-        "target",
-        &self
-          .target()
-          .into_iter()
-          .map(|s| s.id)
-          .collect::<Vec<String>>(),
-      )
+      .field("source", &self.source)
+      .field("target", &self.target())
       // This can't actually be displayed?
       // .field("cond", &self.cond)
       .field("actions", &self.actions)
@@ -47,7 +40,7 @@ impl Transition {
   pub fn new() -> Self {
     Transition {
       event: String::from(""),
-      source: Box::new(StateNode::new()),
+      source: String::from(""),
       config: TransitionConfig {
         target: vec![String::from("")],
       },
@@ -57,7 +50,7 @@ impl Transition {
       kind: Kind::External,
     }
   }
-  pub fn target(&self) -> Vec<StateNode> {
+  pub fn target(&self) -> Vec<String> {
     vec![]
   }
 }

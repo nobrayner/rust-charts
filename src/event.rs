@@ -2,8 +2,8 @@ use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct Event {
-  name: String,
-  data: HashMap<String, String>,
+  pub(crate) name: String,
+  pub(crate) data: HashMap<String, String>,
 }
 impl Event {
   pub fn new() -> Self {
