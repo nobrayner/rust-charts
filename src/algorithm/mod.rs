@@ -18,7 +18,7 @@ use self::utils::{
 mod utils;
 
 pub fn enter_states(
-  state_map: &mut HashMap<String, StateNode>,
+  state_map: &HashMap<String, StateNode>,
   enabled_transitions: Vec<Option<Transition>>,
   mut configuration: Vec<String>,
   mut states_to_invoke: Vec<String>,
@@ -44,12 +44,9 @@ pub fn enter_states(
     &mut configuration.push(s.clone());
     states_to_invoke.push(s.clone());
 
-    if let Some(node) = state_map.get_mut(&s) {
-      let mut entry_actions = vec![];
-      entry_actions.append(&mut node.entry);
-
-      for action in entry_actions {
-        execute_content(action, &mut actions, &mut internal_queue);
+    if let Some(node) = state_map.get(&s) {
+      for action in &node.entry {
+        execute_content(action.clone(), &mut actions, &mut internal_queue);
       }
     }
     if states_for_default_entry.contains(&s) {
@@ -396,9 +393,9 @@ fn execute_content(action: Action, actions: &mut Vec<Action>, internal_queue: &m
 //     .iter()
 //     .filter(|s| is_atomic_state(state_map, s));
 
-//   let mut isLooping = true;
+//   let mut is_looping = true;
 //   for state_id in atomic_states {
-//     if isLooping == false {
+//     if is_looping == false {
 //       break;
 //     }
 
@@ -408,7 +405,7 @@ fn execute_content(action: Action, actions: &mut Vec<Action>, internal_queue: &m
 
 //     for s in ancestors {
 //       if let Some(node) = state_map.get(&s) {
-//         for t in &node.transitions {
+//         for t in &node.transitions.clone() {
 //           if !t.event.is_empty() && condition_match(t) {
 //             enabled_transitions.push(t.clone());
 //           }

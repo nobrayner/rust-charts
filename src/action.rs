@@ -1,8 +1,9 @@
 use std::{collections::HashMap, fmt};
 
+#[derive(Clone)]
 pub struct Action {
   pub(crate) kind: String,
-  pub(crate) exec: Box<dyn Fn() -> ()>,
+  pub(crate) exec: fn() -> (),
   pub(crate) data: HashMap<String, String>, // <String, Any>, but not sure how that will go
 }
 impl fmt::Debug for Action {
@@ -14,7 +15,7 @@ impl Action {
   pub fn new() -> Self {
     Self {
       kind: String::from(""),
-      exec: Box::new(|| ()),
+      exec: || (),
       data: HashMap::new(),
     }
   }

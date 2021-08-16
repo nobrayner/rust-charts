@@ -88,12 +88,10 @@ impl Machine {
     }
   }
 
-  pub fn initial_state(&mut self) -> State {
-    let state_map = &mut self.states;
-
+  pub fn initial_state(&self) -> State {
     let (configuration, actions, internal_queue) = enter_states(
-      state_map,
-      vec![state_map.get(&self.root).unwrap().initial()],
+      &self.states,
+      vec![self.states.get(&self.root).unwrap().initial()],
       vec![],
       vec![],
       &HashMap::new(),
@@ -103,10 +101,10 @@ impl Machine {
 
     // let (configuration, actions) = macrostep(&self.states, configuration, actions, internal_queue);
 
-    // let (actions, warnings) = self.get_actions(actions);
-    // for w in warnings {
-    //   println!("{}", w);
-    // }
+    let (actions, warnings) = self.get_actions(actions);
+    for w in warnings {
+      println!("{}", w);
+    }
 
     State {
       value: self.get_state_values(configuration, None),

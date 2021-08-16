@@ -2,23 +2,25 @@ use std::fmt;
 
 use crate::{action::Action, event::Event};
 
+#[derive(Clone)]
 pub struct TransitionConfig {
   target: Vec<String>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(crate) enum Kind {
   External,
   Internal,
 }
 
+#[derive(Clone)]
 pub struct Transition {
   pub(crate) event: String,
   pub(crate) source: String,
   // The actual type is: String | StateNode | TransitionConfig
   config: TransitionConfig,
   actions: Vec<Action>,
-  cond: Option<Box<dyn Fn(/* context type */ Event) -> bool>>,
+  cond: Option<fn(/* context type */ Event) -> bool>,
   pub(crate) order: i32,
   pub(crate) kind: Kind,
 }
