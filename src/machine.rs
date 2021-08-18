@@ -22,7 +22,7 @@ pub struct Machine {
   id: String,
   root: String,
   pub states: HashMap<String, StateNode>,
-  actions: Vec<Box<dyn Fn()>>,
+  actions: Vec<Action>,
 }
 impl fmt::Debug for Machine {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -101,10 +101,10 @@ impl Machine {
 
     // let (configuration, actions) = macrostep(&self.states, configuration, actions, internal_queue);
 
-    let (actions, warnings) = self.get_actions(actions);
-    for w in warnings {
-      println!("{}", w);
-    }
+    // let (actions, warnings) = self.get_actions(actions);
+    // for w in warnings {
+    //   println!("{}", w);
+    // }
 
     State {
       value: self.get_state_values(configuration, None),

@@ -5,6 +5,7 @@ use std::{
 
 use crate::{
   action::Action,
+  algorithm::utils::condition_match,
   event::Event,
   state_node::StateNode,
   transition::{Kind as TransitionKind, Transition},
@@ -414,5 +415,35 @@ fn execute_content(action: Action, actions: &mut Vec<Action>, internal_queue: &m
 //     }
 //   }
 
+//   let enabled_transitions = remove_conflicting_transitions(
+//     enabled_transitions,
+//     configuration,
+//     // TODO:
+//     &HashMap::new(),
+//   );
+
 //   enabled_transitions
+// }
+
+// fn remove_conflicting_transitions(
+//   enabled_transitions: Vec<Transition>,
+//   configuration: &Vec<String>,
+//   history_value: &HashMap<String, HashSet<String>>,
+// ) -> Vec<Transition> {
+//   let enabled_transition = enabled_transitions.sort_by(|a, b| a.order.cmp(&b.order));
+//   let filtered_transitions: HashSet<Transition> = HashSet::new();
+
+//   for t1 in enabled_transitions {
+//     let t1_preempted = false;
+//     let transitions_to_remove = HashSet::new();
+
+//     for t2 in filtered_transitions {
+//       let t1_exit_set = compute_exit_set(vec![&t1], configuration, history_value);
+//       let t2_exit_set = compute_exit_set(vec![&t2], configuration, history_value);
+
+//       let intersection = t1_exit_set
+//     }
+//   }
+
+//   Vec::from(filtered_transitions)
 // }

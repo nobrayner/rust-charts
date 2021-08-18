@@ -20,7 +20,7 @@ pub struct Transition {
   // The actual type is: String | StateNode | TransitionConfig
   config: TransitionConfig,
   actions: Vec<Action>,
-  cond: Option<fn(/* context type */ Event) -> bool>,
+  pub(crate) cond: Option<fn(/* context type */ Event) -> bool>,
   pub(crate) order: i32,
   pub(crate) kind: Kind,
 }

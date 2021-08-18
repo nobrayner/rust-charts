@@ -1,6 +1,10 @@
 use std::collections::HashMap;
 
-use crate::state_node::{self, StateNode};
+use crate::{
+  event::Event,
+  state_node::{self, StateNode},
+  transition::Transition,
+};
 
 pub fn is_compound_state(state_map: &HashMap<String, StateNode>, state_id: &String) -> bool {
   if let Some(state) = state_map.get(state_id) {
@@ -86,5 +90,18 @@ pub fn is_in_final_state(
       .all(|s| is_in_final_state(state_map, s, configuration))
   } else {
     false
+  }
+}
+
+pub fn condition_match(transition: &Transition) -> bool {
+  match transition.cond {
+    Some(cond) => cond(
+      // FIXME: Use real event and context here?
+      Event {
+        name: String::from(""),
+        data: HashMap::new(),
+      },
+    ),
+    None => true,
   }
 }
