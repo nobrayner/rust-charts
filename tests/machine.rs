@@ -22,26 +22,30 @@ static SIMPLE_LIGHTS: Machine = {
     id: "simple_lights",
     root: "root",
     states: phf_ordered_map! {
-      "root" => StateNodeKind::Compound(CompoundStateNode {
+      "root" => State::Compound(CompoundStateNode {
         id: "root",
         key: "root",
+        parent: None,
         on: root_transitions,
         initial: "root.green",
         states: red_states,
       }),
-      "root.green" => StateNodeKind::Atomic(AtomicStateNode {
+      "root.green" => State::Atomic(AtomicStateNode {
         id: "root.green",
         key: "green",
+        parent: Some("root"),
         on: green_transitions,
       }),
-      "root.yellow" => StateNodeKind::Atomic(AtomicStateNode {
+      "root.yellow" => State::Atomic(AtomicStateNode {
         id: "root.yellow",
         key: "yellow",
+        parent: Some("root"),
         on: yellow_transitions,
       }),
-      "root.red" => StateNodeKind::Atomic(AtomicStateNode {
+      "root.red" => State::Atomic(AtomicStateNode {
         id: "root.red",
         key: "red",
+        parent: Some("root"),
         on: red_transitions,
       }),
     },

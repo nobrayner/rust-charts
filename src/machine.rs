@@ -6,38 +6,67 @@ use std::{
 
 use phf;
 
-use crate::{state::State, StateNodeKind};
+use crate::{algorithm, state::State, state_node, state_node::StateNode};
 
 pub struct Machine {
   pub id: &'static str,
   pub root: &'static str,
-  pub states: phf::OrderedMap<&'static str, StateNodeKind>,
+  pub states: phf::OrderedMap<&'static str, state_node::State>,
 }
 impl Machine {
-  pub fn state_from(&self, state_values: Vec<&str>) -> State {
+  pub fn state_from(&self, state_values: Vec<&'static str>) -> State {
     State {
       context: HashMap::new(),
-      value: self.get_state_values(state_values.into_iter().map(String::from).collect(), None),
+      value: self.get_state_values(state_values, None),
       actions: vec![],
     }
   }
 
-  fn get_state_values(&self, state_values: Vec<String>, parent: Option<String>) -> Vec<String> {
+  pub fn initial_state(&self) -> State {
+    let (configuration, actions, internal_queue) = algorithm::enter_states(
+      &self.states,
+      vec![self.states.get(&self.root).unwrap().initial()],
+      vec![],
+      vec![],
+      &HashMap::new(),
+      vec![],
+      vec![],
+    );
+
+    // let (configuration, actions) = macrostep(&self.states, configuration, actions, internal_queue);
+
+    // let (actions, warnings) = self.get_actions(actions);
+    // for w in warnings {
+    //   println!("{}", w);
+    // }
+
+    State {
+      value: self.get_state_values(configuration, None),
+      context: HashMap::new(),
+      actions,
+    }
+  }
+
+  fn get_state_values(
+    &self,
+    state_values: Vec<&'static str>,
+    parent: Option<&'static str>,
+  ) -> Vec<&'static str> {
     let parent = match parent {
       Some(p) => p,
-      None => String::from(self.root),
+      None => self.root,
     };
 
     let states: HashSet<_> = state_values
       .into_iter()
       .map(|s| {
-        let potential_state = if s.starts_with(&parent) {
-          String::from(&s[parent.len() + 1..])
+        let potential_state = if s.starts_with(parent) {
+          &s[parent.len() + 1..]
         } else {
-          String::from(s)
+          s
         };
 
-        let index = parent.clone() + "." + &potential_state;
+        let index = String::from(parent) + "." + &potential_state;
         if let Some(_) = self.states.get(&index) {
           return potential_state;
         } else {

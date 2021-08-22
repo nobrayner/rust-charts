@@ -12,7 +12,7 @@ impl fmt::Debug for Action {
   }
 }
 impl Action {
-  pub fn new() -> Self {
+  pub fn stub() -> Self {
     Self {
       kind: String::from(""),
       exec: || (),

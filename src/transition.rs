@@ -16,7 +16,7 @@ pub(crate) enum Kind {
 #[derive(Clone)]
 pub struct Transition {
   pub(crate) event: String,
-  pub(crate) source: String,
+  pub(crate) source: &'static str,
   // The actual type is: String | StateNode | TransitionConfig
   config: TransitionConfig,
   actions: Vec<Action>,
@@ -39,10 +39,10 @@ impl fmt::Debug for Transition {
   }
 }
 impl Transition {
-  pub fn new() -> Self {
+  pub fn stub() -> Self {
     Transition {
       event: String::from(""),
-      source: String::from(""),
+      source: "",
       config: TransitionConfig {
         target: vec![String::from("")],
       },
@@ -52,7 +52,7 @@ impl Transition {
       kind: Kind::External,
     }
   }
-  pub fn target(&self) -> Vec<String> {
+  pub fn target(&self) -> Vec<&'static str> {
     vec![]
   }
 }
