@@ -1,16 +1,14 @@
+use phf::OrderedMap;
 use std::collections::HashSet;
 
-use phf::OrderedMap;
-
-use crate::{algorithm::utils, transition::Transition};
-
 use super::{State, StateNode};
+use crate::{algorithm::utils, transition::Transition, transition::TransitionConfig};
 
 pub struct CompoundStateNode {
   pub id: &'static str,
   pub key: &'static str,
   pub parent: Option<&'static str>,
-  pub on: OrderedMap<&'static str, &'static str>,
+  pub on: OrderedMap<&'static str, &'static [TransitionConfig]>,
   pub initial: &'static str,
   pub states: OrderedMap<&'static str, &'static str>,
 }
@@ -25,11 +23,32 @@ impl StateNode for CompoundStateNode {
     self.parent
   }
   fn initial(&self) -> Option<Transition> {
-    // FIXME:
-    Some(Transition::stub())
+    Some(Transition {
+      event: String::from("xstate::initial_state"),
+      source: self.id,
+      targets: vec![self.initial],
+      // TODO: Implement actions
+      actions: vec![],
+      cond: None,
+      order: -1,
+      kind: crate::TransitionKind::External,
+    })
   }
   fn child_states(&self) -> Vec<&'static str> {
     self.states.values().map(|s| *s).collect()
+  }
+  fn transitions(&self) -> Vec<Transition> {
+    self
+      .on
+      .values()
+      .fold(vec![], |mut all_transitions, transitions| {
+        for _transition in transitions.iter() {
+          // FIXME:
+          all_transitions.push(Transition::stub());
+        }
+
+        all_transitions
+      })
   }
 
   // Checks
@@ -61,7 +80,7 @@ impl StateNode for CompoundStateNode {
     states_for_default_entry.insert(self.id());
 
     if let Some(target_transition) = self.initial() {
-      for target_state_id in target_transition.target() {
+      for target_state_id in &target_transition.targets {
         if let Some(target_state) = state_map.get(target_state_id) {
           target_state.add_descendent_states_to_enter(
             state_map,

@@ -6,7 +6,7 @@ pub fn is_descendant(state_1: &str, state_2: &str) -> bool {
   state_1.starts_with(state_2)
 }
 
-pub fn condition_match(transition: &Transition) -> bool {
+pub fn _condition_match(transition: &Transition) -> bool {
   match transition.cond {
     Some(cond) => cond(
       // FIXME: Use real event and context here?
@@ -17,6 +17,10 @@ pub fn condition_match(transition: &Transition) -> bool {
     ),
     None => true,
   }
+}
+
+pub fn _name_match(event: &str, specific_event: &str) -> bool {
+  event == specific_event
 }
 
 pub fn get_proper_ancestor_ids<'s>(

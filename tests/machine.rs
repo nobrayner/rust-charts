@@ -1,53 +1,69 @@
 use rust_charts::*;
 
 static SIMPLE_LIGHTS: Machine = {
-  let root_transitions = phf_ordered_map! {};
-  let green_transitions = phf_ordered_map! {
-    "TIMER" => "yellow",
-  };
-  let yellow_transitions = phf_ordered_map! {
-    "TIMER" => "red",
-  };
-  let red_transitions = phf_ordered_map! {
-    "TIMER" => "green",
-  };
-
-  let red_states = phf_ordered_map! {
-    "green" => "root.green",
-    "yellow" => "root.yellow",
-    "red" => "root.red",
-  };
+  let root = State::Compound(CompoundStateNode {
+    id: "root",
+    key: "root",
+    parent: None,
+    on: phf_ordered_map! {},
+    initial: "root.green",
+    states: phf_ordered_map! {
+      "green" => "root.green",
+      "yellow" => "root.yellow",
+      "red" => "root.red",
+    },
+  });
+  let root_green = State::Atomic(AtomicStateNode {
+    id: "root.green",
+    key: "green",
+    parent: Some("root"),
+    on: phf_ordered_map! {
+      "TIMER" => &[
+        Transition {
+          targets: &["root.yellow"],
+          cond: None,
+          kind: TransitionKind::External,
+        },
+      ],
+    },
+  });
+  let root_yellow = State::Atomic(AtomicStateNode {
+    id: "root.yellow",
+    key: "yellow",
+    parent: Some("root"),
+    on: phf_ordered_map! {
+      "TIMER" => &[
+        Transition {
+          targets: &["root.red"],
+          cond: None,
+          kind: TransitionKind::External,
+        },
+      ],
+    },
+  });
+  let root_red = State::Atomic(AtomicStateNode {
+    id: "root.red",
+    key: "red",
+    parent: Some("root"),
+    on: phf_ordered_map! {
+      "TIMER" => &[
+        Transition {
+          targets: &["root.green"],
+          cond: None,
+          kind: TransitionKind::External,
+        },
+      ],
+    },
+  });
 
   Machine {
     id: "simple_lights",
     root: "root",
     states: phf_ordered_map! {
-      "root" => State::Compound(CompoundStateNode {
-        id: "root",
-        key: "root",
-        parent: None,
-        on: root_transitions,
-        initial: "root.green",
-        states: red_states,
-      }),
-      "root.green" => State::Atomic(AtomicStateNode {
-        id: "root.green",
-        key: "green",
-        parent: Some("root"),
-        on: green_transitions,
-      }),
-      "root.yellow" => State::Atomic(AtomicStateNode {
-        id: "root.yellow",
-        key: "yellow",
-        parent: Some("root"),
-        on: yellow_transitions,
-      }),
-      "root.red" => State::Atomic(AtomicStateNode {
-        id: "root.red",
-        key: "red",
-        parent: Some("root"),
-        on: red_transitions,
-      }),
+      "root" => root,
+      "root.green" => root_green,
+      "root.yellow" => root_yellow,
+      "root.red" => root_red,
     },
   }
 };

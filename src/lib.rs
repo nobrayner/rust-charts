@@ -8,6 +8,7 @@ mod transition;
 
 pub use machine::Machine;
 pub use state_node::*;
+pub use transition::{TransitionConfig as Transition, TransitionKind};
 
 // Re-export required phf things
-pub use phf::{phf_ordered_map, OrderedMap};
+pub use phf::phf_ordered_map;

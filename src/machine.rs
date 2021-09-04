@@ -6,7 +6,7 @@ use std::{
 
 use phf;
 
-use crate::{algorithm, state::State, state_node, state_node::StateNode};
+use crate::{state::State, state_node};
 
 pub struct Machine {
   pub id: &'static str,
@@ -22,29 +22,8 @@ impl Machine {
     }
   }
 
-  pub fn initial_state(&self) -> State {
-    let (configuration, actions, internal_queue) = algorithm::enter_states(
-      &self.states,
-      vec![self.states.get(&self.root).unwrap().initial()],
-      vec![],
-      vec![],
-      &HashMap::new(),
-      vec![],
-      vec![],
-    );
-
-    // let (configuration, actions) = macrostep(&self.states, configuration, actions, internal_queue);
-
-    // let (actions, warnings) = self.get_actions(actions);
-    // for w in warnings {
-    //   println!("{}", w);
-    // }
-
-    State {
-      value: self.get_state_values(configuration, None),
-      context: HashMap::new(),
-      actions,
-    }
+  pub fn initial_state(&'static self) -> State {
+    State::stub()
   }
 
   fn get_state_values(

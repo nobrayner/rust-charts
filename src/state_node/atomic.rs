@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use phf::OrderedMap;
 
-use crate::{algorithm::utils, transition::Transition};
+use crate::{algorithm::utils, transition::Transition, transition::TransitionConfig};
 
 use super::{State, StateNode};
 
@@ -10,7 +10,7 @@ pub struct AtomicStateNode {
   pub id: &'static str,
   pub key: &'static str,
   pub parent: Option<&'static str>,
-  pub on: OrderedMap<&'static str, &'static str>,
+  pub on: OrderedMap<&'static str, &'static [TransitionConfig]>,
 }
 impl StateNode for AtomicStateNode {
   fn id(&self) -> &'static str {
@@ -27,6 +27,19 @@ impl StateNode for AtomicStateNode {
   }
   fn child_states(&self) -> Vec<&'static str> {
     vec![]
+  }
+  fn transitions(&self) -> Vec<Transition> {
+    self
+      .on
+      .values()
+      .fold(vec![], |mut all_transitions, transitions| {
+        for _transition in transitions.iter() {
+          // FIXME:
+          all_transitions.push(Transition::stub());
+        }
+
+        all_transitions
+      })
   }
 
   // Checks
