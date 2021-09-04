@@ -3,7 +3,7 @@ use std::{collections::HashMap, fmt};
 use crate::action::Action;
 
 pub struct State {
-  pub value: Vec<String>,
+  pub value: Vec<&'static str>,
   pub context: HashMap<String, String>,
   pub(crate) actions: Vec<Action>,
 }

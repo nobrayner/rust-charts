@@ -6,5 +6,9 @@ mod state;
 mod state_node;
 mod transition;
 
-pub use machine::{Machine, MachineConfig};
-pub use state_node::{Kind as StateNodeKind, StateNodeConfig};
+pub use machine::Machine;
+pub use state_node::*;
+pub use transition::{TransitionConfig as Transition, TransitionKind};
+
+// Re-export required phf things
+pub use phf::phf_ordered_map;

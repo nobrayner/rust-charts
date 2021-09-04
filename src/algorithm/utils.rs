@@ -1,99 +1,12 @@
 use std::collections::HashMap;
 
-use crate::{
-  event::Event,
-  state_node::{self, StateNode},
-  transition::Transition,
-};
+use crate::{event::Event, transition::Transition};
 
-pub fn is_compound_state(state_map: &HashMap<String, StateNode>, state_id: &String) -> bool {
-  if let Some(state) = state_map.get(state_id) {
-    match state.kind {
-      state_node::Kind::Compound => true,
-      _ => false,
-    }
-  } else {
-    false
-  }
+pub fn is_descendant(state_1: &str, state_2: &str) -> bool {
+  state_1.starts_with(state_2)
 }
 
-pub fn is_atomic_state(state_map: &HashMap<String, StateNode>, state_id: &String) -> bool {
-  if let Some(state) = state_map.get(state_id) {
-    match state.kind {
-      state_node::Kind::Atomic => true,
-      state_node::Kind::Final => true,
-      state_node::Kind::History => true,
-      _ => false,
-    }
-  } else {
-    false
-  }
-}
-
-pub fn is_history_state(state_map: &HashMap<String, StateNode>, state_id: &String) -> bool {
-  if let Some(state) = state_map.get(state_id) {
-    match state.kind {
-      state_node::Kind::History => true,
-      _ => false,
-    }
-  } else {
-    false
-  }
-}
-
-pub fn is_parallel_state(state_map: &HashMap<String, StateNode>, state_id: &String) -> bool {
-  if let Some(state) = state_map.get(state_id) {
-    match state.kind {
-      state_node::Kind::Parallel => true,
-      _ => false,
-    }
-  } else {
-    false
-  }
-}
-
-pub fn is_final_state(state_map: &HashMap<String, StateNode>, state_id: &String) -> bool {
-  if let Some(state) = state_map.get(state_id) {
-    match state.kind {
-      state_node::Kind::Final => true,
-      _ => false,
-    }
-  } else {
-    false
-  }
-}
-
-pub fn is_descendant(maybe_child_id: &String, maybe_parent_id: &String) -> bool {
-  maybe_child_id.starts_with(maybe_parent_id)
-}
-
-pub fn get_child_states(state_map: &HashMap<String, StateNode>, state_id: &String) -> Vec<String> {
-  if let Some(node) = state_map.get(state_id) {
-    node.states.values().map(String::from).collect()
-  } else {
-    vec![]
-  }
-}
-
-pub fn is_in_final_state(
-  state_map: &HashMap<String, StateNode>,
-  state_id: &String,
-  configuration: &Vec<String>,
-) -> bool {
-  if is_compound_state(state_map, state_id) {
-    get_child_states(state_map, state_id)
-      .iter()
-      .any(|s| is_final_state(state_map, s) && configuration.contains(s))
-  } else if is_parallel_state(state_map, state_id) {
-    get_child_states(state_map, state_id)
-      .iter()
-      .all(|s| is_in_final_state(state_map, s, configuration))
-  } else {
-    false
-  }
-}
-
-pub fn condition_match(transition: &Transition) -> bool {
+pub fn _condition_match(transition: &Transition) -> bool {
   match transition.cond {
     Some(cond) => cond(
       // FIXME: Use real event and context here?
@@ -104,4 +17,45 @@ pub fn condition_match(transition: &Transition) -> bool {
     ),
     None => true,
   }
+}
+
+pub fn _name_match(event: &str, specific_event: &str) -> bool {
+  event == specific_event
+}
+
+pub fn get_proper_ancestor_ids<'s>(
+  state_id: &'s str,
+  maybe_ancestor_id: Option<&'s str>,
+) -> Vec<&'s str> {
+  let mut ancestors = vec![];
+  let ancestor_id = match maybe_ancestor_id {
+    Some(id) => id,
+    None => "",
+  };
+
+  if state_id == ancestor_id || ancestor_id.starts_with(state_id) {
+    return ancestors;
+  }
+
+  if let Some(last_dot_index) = (&state_id).rfind(".") {
+    let mut current_index = last_dot_index;
+    loop {
+      let id = &state_id[..current_index];
+
+      if id == ancestor_id {
+        break;
+      }
+
+      if let Some(next_last_dot_index) = id.rfind(".") {
+        ancestors.push(id);
+        current_index = next_last_dot_index;
+      } else {
+        // We've reached the root
+        ancestors.push(id);
+        break;
+      }
+    }
+  }
+
+  ancestors
 }

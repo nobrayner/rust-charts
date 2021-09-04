@@ -1,69 +1,72 @@
-use xstate_rust::*;
+use rust_charts::*;
 
-fn light_machine() -> Machine {
-  Machine::new(MachineConfig {
-    id: "lights",
-    states: vec![
-      StateNodeConfig {
-        id: "green",
-        on: vec![("TIMER", "yellow")],
-        kind: StateNodeKind::Atomic,
-        initial: None,
-        on_done: None,
-        states: vec![],
-      },
-      StateNodeConfig {
-        id: "yellow",
-        on: vec![("TIMER", "red")],
-        kind: StateNodeKind::Atomic,
-        initial: None,
-        on_done: None,
-        states: vec![],
-      },
-      StateNodeConfig {
-        id: "red",
-        on: vec![],
-        kind: StateNodeKind::Atomic,
-        initial: None,
-        on_done: None,
-        states: vec![
-          StateNodeConfig {
-            id: "walk",
-            kind: StateNodeKind::Atomic,
-            on: vec![("COUNTDOWN", "wait")],
-            initial: None,
-            states: vec![],
-            on_done: None,
-          },
-          StateNodeConfig {
-            id: "wait",
-            kind: StateNodeKind::Atomic,
-            on: vec![("COUNTDOWN", "stop")],
-            initial: None,
-            states: vec![],
-            on_done: None,
-          },
-          StateNodeConfig {
-            id: "stop",
-            kind: StateNodeKind::Atomic,
-            on: vec![("TIMEOUT", "timeout")],
-            initial: None,
-            states: vec![],
-            on_done: None,
-          },
-          StateNodeConfig {
-            id: "timeout",
-            kind: StateNodeKind::Final,
-            on: vec![],
-            initial: None,
-            states: vec![],
-            on_done: None,
-          },
-        ],
-      },
-    ],
-  })
-}
+static SIMPLE_LIGHTS: Machine = {
+  let root = State::Compound(CompoundStateNode {
+    id: "root",
+    key: "root",
+    parent: None,
+    on: phf_ordered_map! {},
+    initial: "root.green",
+    states: phf_ordered_map! {
+      "green" => "root.green",
+      "yellow" => "root.yellow",
+      "red" => "root.red",
+    },
+  });
+  let root_green = State::Atomic(AtomicStateNode {
+    id: "root.green",
+    key: "green",
+    parent: Some("root"),
+    on: phf_ordered_map! {
+      "TIMER" => &[
+        Transition {
+          targets: &["root.yellow"],
+          cond: None,
+          kind: TransitionKind::External,
+        },
+      ],
+    },
+  });
+  let root_yellow = State::Atomic(AtomicStateNode {
+    id: "root.yellow",
+    key: "yellow",
+    parent: Some("root"),
+    on: phf_ordered_map! {
+      "TIMER" => &[
+        Transition {
+          targets: &["root.red"],
+          cond: None,
+          kind: TransitionKind::External,
+        },
+      ],
+    },
+  });
+  let root_red = State::Atomic(AtomicStateNode {
+    id: "root.red",
+    key: "red",
+    parent: Some("root"),
+    on: phf_ordered_map! {
+      "TIMER" => &[
+        Transition {
+          targets: &["root.green"],
+          cond: None,
+          kind: TransitionKind::External,
+        },
+      ],
+    },
+  });
+
+  Machine {
+    id: "simple_lights",
+    root: "root",
+    states: phf_ordered_map! {
+      "root" => root,
+      "root.green" => root_green,
+      "root.yellow" => root_yellow,
+      "root.red" => root_red,
+    },
+  }
+};
 
 // #[test]
 // pub fn machine_initial_state() {
@@ -74,9 +77,9 @@ fn light_machine() -> Machine {
 
 #[test]
 pub fn state_from() {
-  let lights = light_machine();
+  let yellow_state = SIMPLE_LIGHTS.state_from(vec!["yellow"]);
 
-  let yellow_state = lights.state_from(vec!["yellow"]);
+  println!("{:?}", SIMPLE_LIGHTS);
 
   assert_eq!(yellow_state.value, vec!["yellow"]);
 }
