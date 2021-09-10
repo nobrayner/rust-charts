@@ -8,9 +8,9 @@ pub fn is_descendant(state_1: &str, state_2: &str) -> bool {
   state_1.starts_with(state_2)
 }
 
-pub fn condition_match(transition: &Transition) -> bool {
+pub fn guard_match(transition: &Transition) -> bool {
   match transition.guard {
-    Some(cond) => cond(
+    Some(guard) => guard(
       // FIXME: Use real event and context here?
       Event {
         name: String::from(""),
