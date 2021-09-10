@@ -1,11 +1,35 @@
-use std::collections::HashMap;
-
 use phf::OrderedMap;
+use std::collections::HashMap;
 
 use crate::{event::Event, state_node::State as StateNode, transition::Transition};
 
-pub fn is_descendant(state_1: &str, state_2: &str) -> bool {
-  state_1.starts_with(state_2)
+pub fn is_descendant(
+  state_map: &OrderedMap<&'static str, StateNode>,
+  child_id: &str,
+  ancestor_id: &str,
+) -> bool {
+  // state_1.starts_with(state_2)
+
+  let mut is_descendant = false;
+
+  if let Some(child) = state_map.get(child_id) {
+    let mut marker = child;
+
+    while let Some(parent_id) = marker.parent() {
+      if parent_id != ancestor_id {
+        if let Some(parent) = state_map.get(parent_id) {
+          marker = parent;
+        } else {
+          break;
+        }
+      } else {
+        is_descendant = true;
+        break;
+      }
+    }
+  }
+
+  is_descendant
 }
 
 pub fn guard_match(transition: &Transition) -> bool {
@@ -76,5 +100,70 @@ pub fn is_in_final_state(
     }
   } else {
     false
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use crate::state_node::{AtomicStateNode, CompoundStateNode, State as StateNode};
+  use phf::phf_ordered_map;
+
+  static STATE_MAP: OrderedMap<&'static str, StateNode> = {
+    let grandparent = StateNode::Compound(CompoundStateNode {
+      id: "grandparent",
+      parent: None,
+      initial: None,
+      on: phf_ordered_map! {},
+      states: &["grandparent.parent"],
+    });
+    let grandparent_parent = StateNode::Compound(CompoundStateNode {
+      id: "grandparent.parent",
+      parent: Some("grandparent"),
+      initial: None,
+      on: phf_ordered_map! {},
+      states: &["grandparent.parent.child"],
+    });
+    let grandparent_parent_child = StateNode::Atomic(AtomicStateNode {
+      id: "grandparent.parent.child",
+      parent: Some("grandparent.parent"),
+      on: phf_ordered_map! {},
+    });
+    let orphan = StateNode::Atomic(AtomicStateNode {
+      id: "orphan",
+      parent: None,
+      on: phf_ordered_map! {},
+    });
+
+    phf_ordered_map! {
+      "grandparent" => grandparent,
+      "grandparent.parent" => grandparent_parent,
+      "grandparent.parent.child" => grandparent_parent_child,
+      "orphan" => orphan,
+    }
+  };
+
+  #[test]
+  fn test_is_descendant() {
+    assert_eq!(
+      is_descendant(&STATE_MAP, "grandparent.parent", "grandparent"),
+      true,
+      "grandparent > grandparent.parent"
+    );
+    assert_eq!(
+      is_descendant(&STATE_MAP, "grandparent.parent.child", "grandparent"),
+      true,
+      "grandparent > grandparent.parent.child"
+    );
+    assert_eq!(
+      is_descendant(&STATE_MAP, "orphan", "grandparent"),
+      false,
+      "grandparent !> orphan"
+    );
+    assert_eq!(
+      is_descendant(&STATE_MAP, "grandparent", "grandparent.parent"),
+      false,
+      "grandparent.parent !> grandparent"
+    );
   }
 }

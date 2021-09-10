@@ -374,7 +374,7 @@ fn add_descendent_states_to_enter(
         for &child_id in state.child_state_ids() {
           if !states_to_enter
             .iter()
-            .any(|&s| utils::is_descendant(s, child_id))
+            .any(|&s| utils::is_descendant(state_map, s, child_id))
           {
             add_descendent_states_to_enter(
               state_map,
@@ -408,7 +408,7 @@ fn add_ancestor_states_to_enter(
           for &child_id in ancestor.child_state_ids() {
             if !states_to_enter
               .iter()
-              .any(|&s| utils::is_descendant(s, child_id))
+              .any(|&s| utils::is_descendant(state_map, s, child_id))
             {
               add_descendent_states_to_enter(
                 state_map,
@@ -449,7 +449,7 @@ fn get_transition_domain(
             StateNode::Compound(_) => {
               if transition_state_ids
                 .iter()
-                .all(|&s| utils::is_descendant(s, transition.source))
+                .all(|&s| utils::is_descendant(state_map, s, transition.source))
               {
                 Some(transition.source)
               } else {
@@ -517,7 +517,7 @@ fn find_lcca(
   {
     if state_list[1..]
       .iter()
-      .all(|&s| utils::is_descendant(s, ancestor_id))
+      .all(|&s| utils::is_descendant(state_map, s, ancestor_id))
     {
       return Some(ancestor_id);
     }
