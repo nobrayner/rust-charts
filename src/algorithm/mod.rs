@@ -399,7 +399,7 @@ fn add_ancestor_states_to_enter(
   states_for_default_entry: &mut Vec<&'static str>,
   default_history_actions: &mut HashMap<&'static str, &'static [&'static Action]>,
 ) {
-  for ancestor_id in utils::get_proper_ancestor_ids(state_id, Some(ancestor_id)) {
+  for ancestor_id in utils::get_proper_ancestor_ids(state_map, state_id, Some(ancestor_id)) {
     if let Some(ancestor) = state_map.get(ancestor_id) {
       states_to_enter.push(ancestor_id);
 
@@ -502,7 +502,7 @@ fn find_lcca(
   state_map: &OrderedMap<&'static str, StateNode>,
   state_list: Vec<&'static str>,
 ) -> Option<&'static str> {
-  for &ancestor_id in utils::get_proper_ancestor_ids(state_list[0], None)
+  for &ancestor_id in utils::get_proper_ancestor_ids(state_map, state_list[0], None)
     .iter()
     .filter(|&&state_id| {
       if let Some(state) = state_map.get(state_id) {

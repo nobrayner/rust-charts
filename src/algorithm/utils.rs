@@ -8,8 +8,6 @@ pub fn is_descendant(
   child_id: &str,
   ancestor_id: &str,
 ) -> bool {
-  // state_1.starts_with(state_2)
-
   let mut is_descendant = false;
 
   if let Some(child) = state_map.get(child_id) {
@@ -20,7 +18,8 @@ pub fn is_descendant(
         if let Some(parent) = state_map.get(parent_id) {
           marker = parent;
         } else {
-          break;
+          // Technically shouldn't be possible
+          panic!("Invalid state \"{}\"", parent_id);
         }
       } else {
         is_descendant = true;
@@ -46,6 +45,7 @@ pub fn guard_match(transition: &Transition) -> bool {
 }
 
 pub fn get_proper_ancestor_ids<'s>(
+  state_map: &OrderedMap<&'static str, StateNode>,
   state_id: &'s str,
   maybe_ancestor_id: Option<&'s str>,
 ) -> Vec<&'s str> {
@@ -55,25 +55,19 @@ pub fn get_proper_ancestor_ids<'s>(
     None => "",
   };
 
-  if state_id == ancestor_id || ancestor_id.starts_with(state_id) {
-    return ancestors;
-  }
+  if let Some(state) = state_map.get(state_id) {
+    let mut marker = state.parent();
 
-  if let Some(last_dot_index) = (&state_id).rfind(".") {
-    let mut current_index = last_dot_index;
-    loop {
-      let id = &state_id[..current_index];
-
-      if id == ancestor_id {
-        break;
-      }
-
-      if let Some(next_last_dot_index) = id.rfind(".") {
-        ancestors.push(id);
-        current_index = next_last_dot_index;
+    while let Some(parent_id) = marker {
+      if parent_id != ancestor_id {
+        if let Some(parent) = state_map.get(parent_id) {
+          ancestors.push(parent_id);
+          marker = parent.parent();
+        } else {
+          // Technically shouldn't be possible
+          panic!("Invalid state \"{}\"", parent_id);
+        }
       } else {
-        // We've reached the root
-        ancestors.push(id);
         break;
       }
     }
@@ -173,27 +167,27 @@ mod tests {
   #[test]
   fn test_get_proper_ancestor_ids() {
     assert_eq!(
-      get_proper_ancestor_ids("grandparent.parent.child", Some("grandparent")),
+      get_proper_ancestor_ids(&STATE_MAP, "grandparent.parent.child", Some("grandparent")),
       vec!["grandparent.parent"]
     );
 
     assert_eq!(
-      get_proper_ancestor_ids("grandparent.parent.child", None),
+      get_proper_ancestor_ids(&STATE_MAP, "grandparent.parent.child", None),
       vec!["grandparent.parent", "grandparent"]
     );
 
     assert_eq!(
-      get_proper_ancestor_ids("grandparent.parent", Some("grandparent")),
+      get_proper_ancestor_ids(&STATE_MAP, "grandparent.parent", Some("grandparent")),
       vec![] as Vec<&str>
     );
 
     assert_eq!(
-      get_proper_ancestor_ids("grandparent", Some("grandparent")),
+      get_proper_ancestor_ids(&STATE_MAP, "grandparent", Some("grandparent")),
       vec![] as Vec<&str>
     );
 
     assert_eq!(
-      get_proper_ancestor_ids("grandparent", Some("grandparent.parent")),
+      get_proper_ancestor_ids(&STATE_MAP, "grandparent", Some("grandparent.parent")),
       vec![] as Vec<&str>
     );
   }
