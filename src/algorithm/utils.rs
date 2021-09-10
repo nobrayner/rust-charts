@@ -150,20 +150,51 @@ mod tests {
       true,
       "grandparent > grandparent.parent"
     );
+
     assert_eq!(
       is_descendant(&STATE_MAP, "grandparent.parent.child", "grandparent"),
       true,
       "grandparent > grandparent.parent.child"
     );
+
     assert_eq!(
       is_descendant(&STATE_MAP, "orphan", "grandparent"),
       false,
       "grandparent !> orphan"
     );
+
     assert_eq!(
       is_descendant(&STATE_MAP, "grandparent", "grandparent.parent"),
       false,
       "grandparent.parent !> grandparent"
+    );
+  }
+
+  #[test]
+  fn test_get_proper_ancestor_ids() {
+    assert_eq!(
+      get_proper_ancestor_ids("grandparent.parent.child", Some("grandparent")),
+      vec!["grandparent.parent"]
+    );
+
+    assert_eq!(
+      get_proper_ancestor_ids("grandparent.parent.child", None),
+      vec!["grandparent.parent", "grandparent"]
+    );
+
+    assert_eq!(
+      get_proper_ancestor_ids("grandparent.parent", Some("grandparent")),
+      vec![] as Vec<&str>
+    );
+
+    assert_eq!(
+      get_proper_ancestor_ids("grandparent", Some("grandparent")),
+      vec![] as Vec<&str>
+    );
+
+    assert_eq!(
+      get_proper_ancestor_ids("grandparent", Some("grandparent.parent")),
+      vec![] as Vec<&str>
     );
   }
 }
