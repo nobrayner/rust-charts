@@ -2,68 +2,40 @@ use phf::OrderedMap;
 use std::collections::HashSet;
 
 use super::{State, StateNode};
-use crate::{algorithm::utils, transition::Transition, transition::TransitionConfig};
+use crate::{action::Action, algorithm::utils, transition::Transition};
 
 pub struct CompoundStateNode {
   pub id: &'static str,
-  pub key: &'static str,
   pub parent: Option<&'static str>,
-  pub on: OrderedMap<&'static str, &'static [TransitionConfig]>,
-  pub initial: &'static str,
-  pub states: OrderedMap<&'static str, &'static str>,
+  pub on: OrderedMap<&'static str, &'static [Transition]>,
+  pub initial: Option<&'static Transition>,
+  pub states: &'static [&'static str],
 }
 impl StateNode for CompoundStateNode {
   fn id(&self) -> &'static str {
     self.id
   }
-  fn key(&self) -> &'static str {
-    self.key
-  }
   fn parent(&self) -> Option<&'static str> {
     self.parent
   }
-  fn initial(&self) -> Option<Transition> {
-    Some(Transition {
-      event: String::from("xstate::initial_state"),
-      source: self.id,
-      targets: vec![self.initial],
-      // TODO: Implement actions
-      actions: vec![],
-      cond: None,
-      order: -1,
-      kind: crate::TransitionKind::External,
-    })
+  fn initial(&self) -> Option<&'static Transition> {
+    self.initial
   }
-  fn child_states(&self) -> Vec<&'static str> {
-    self.states.values().map(|s| *s).collect()
+  fn child_state_ids(&self) -> &'static [&'static str] {
+    self.states
   }
-  fn transitions(&self) -> Vec<Transition> {
-    self
-      .on
-      .values()
-      .fold(vec![], |mut all_transitions, transitions| {
-        for _transition in transitions.iter() {
-          // FIXME:
-          all_transitions.push(Transition::stub());
-        }
+  fn transitions(&self) -> Vec<&'static Transition> {
+    let values = self.on.values();
 
-        all_transitions
-      })
+    values.flat_map(|v| *v).collect()
   }
-
-  // Checks
-  fn is_in_final_state(
-    &self,
-    state_map: &OrderedMap<&'static str, State>,
-    configuration: &Vec<&'static str>,
-  ) -> bool {
-    self.child_states().into_iter().any(|child_id| {
-      if let Some(child) = state_map.get(child_id) {
-        child.is_in_final_state(state_map, configuration)
-      } else {
-        false
-      }
-    })
+  fn entry_actions(&self) -> Vec<&'static Action> {
+    // TODO:
+    vec![]
+  }
+  fn exit_actions(&self) -> Vec<&'static Action> {
+    // TODO:
+    vec![]
   }
 
   // Algorithm stuff
@@ -80,7 +52,7 @@ impl StateNode for CompoundStateNode {
     states_for_default_entry.insert(self.id());
 
     if let Some(target_transition) = self.initial() {
-      for target_state_id in &target_transition.targets {
+      for target_state_id in target_transition.targets {
         if let Some(target_state) = state_map.get(target_state_id) {
           target_state.add_descendent_states_to_enter(
             state_map,

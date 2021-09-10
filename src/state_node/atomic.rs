@@ -2,49 +2,40 @@ use std::collections::HashSet;
 
 use phf::OrderedMap;
 
-use crate::{algorithm::utils, transition::Transition, transition::TransitionConfig};
+use crate::{action::Action, algorithm::utils, transition::Transition};
 
 use super::{State, StateNode};
 
 pub struct AtomicStateNode {
   pub id: &'static str,
-  pub key: &'static str,
   pub parent: Option<&'static str>,
-  pub on: OrderedMap<&'static str, &'static [TransitionConfig]>,
+  pub on: OrderedMap<&'static str, &'static [Transition]>,
 }
 impl StateNode for AtomicStateNode {
   fn id(&self) -> &'static str {
     self.id
   }
-  fn key(&self) -> &'static str {
-    self.key
-  }
   fn parent(&self) -> Option<&'static str> {
     self.parent
   }
-  fn initial(&self) -> Option<Transition> {
+  fn initial(&self) -> Option<&'static Transition> {
     None
   }
-  fn child_states(&self) -> Vec<&'static str> {
+  fn child_state_ids(&self) -> &'static [&'static str] {
+    &[]
+  }
+  fn transitions(&self) -> Vec<&'static Transition> {
+    let values = self.on.values();
+
+    values.flat_map(|v| *v).collect()
+  }
+  fn entry_actions(&self) -> Vec<&'static Action> {
+    // TODO:
     vec![]
   }
-  fn transitions(&self) -> Vec<Transition> {
-    self
-      .on
-      .values()
-      .fold(vec![], |mut all_transitions, transitions| {
-        for _transition in transitions.iter() {
-          // FIXME:
-          all_transitions.push(Transition::stub());
-        }
-
-        all_transitions
-      })
-  }
-
-  // Checks
-  fn is_in_final_state(&self, _: &OrderedMap<&'static str, State>, _: &Vec<&'static str>) -> bool {
-    false
+  fn exit_actions(&self) -> Vec<&'static Action> {
+    // TODO:
+    vec![]
   }
 
   // Algorithm stuff

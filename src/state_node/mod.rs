@@ -1,7 +1,7 @@
 use phf::OrderedMap;
 use std::{collections::HashSet, fmt, ops::Deref};
 
-use crate::{event::Event, transition::Transition};
+use crate::{action::Action, event::Event, transition::Transition};
 
 mod atomic;
 mod compound;
@@ -11,18 +11,15 @@ pub use compound::*;
 
 pub trait StateNode {
   fn id(&self) -> &'static str;
-  fn key(&self) -> &'static str;
-  fn initial(&self) -> Option<Transition>;
+  fn initial(&self) -> Option<&'static Transition>;
   fn parent(&self) -> Option<&'static str>;
-  fn child_states(&self) -> Vec<&'static str>;
-  fn transitions(&self) -> Vec<Transition>;
-
-  // Checks
-  fn is_in_final_state(
-    &self,
-    state_map: &OrderedMap<&'static str, State>,
-    configuration: &Vec<&'static str>,
-  ) -> bool;
+  fn child_state_ids(&self) -> &[&'static str];
+  /// All the transitions for this state node that are associated with an event
+  fn transitions(&self) -> Vec<&'static Transition>;
+  /// All the transitions for this state node that aren't associated with any events
+  // fn eventless_transitions(&self);
+  fn entry_actions(&self) -> Vec<&'static Action>;
+  fn exit_actions(&self) -> Vec<&'static Action>;
 
   // Algorithm stuff
   fn enter_state(&self, internal_queue: &mut Vec<Event>);
@@ -51,6 +48,9 @@ pub trait StateNode {
 pub enum State {
   Atomic(AtomicStateNode),
   Compound(CompoundStateNode),
+  Final(&'static str),
+  Parallel(&'static str),
+  History(&'static str),
 }
 impl Deref for State {
   type Target = dyn StateNode;
@@ -59,6 +59,7 @@ impl Deref for State {
     match self {
       Self::Atomic(s) => s,
       Self::Compound(s) => s,
+      _ => panic!("Not implemented yet!"),
     }
   }
 }
@@ -67,6 +68,7 @@ impl fmt::Debug for State {
     match self {
       Self::Atomic(s) => write!(f, "<StateNode \"{}\">", &s.id),
       Self::Compound(s) => write!(f, "<StateNode \"{}\">", &s.id),
+      _ => panic!("Not implemented yet!"),
     }
   }
 }

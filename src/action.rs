@@ -8,6 +8,6 @@ pub struct Action {
 }
 impl fmt::Debug for Action {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    f.debug_struct("Action").field("type", &self.kind).finish()
+    f.debug_struct("Action").field("kind", &self.kind).finish()
   }
 }

@@ -8,46 +8,46 @@ pub enum TransitionKind {
   Internal,
 }
 
-pub struct TransitionConfig {
-  pub targets: &'static [&'static str],
-  pub cond: Option<fn(/* context type */ Event) -> bool>,
-  pub kind: TransitionKind,
-}
-
 #[derive(Clone, Hash, PartialEq, Eq)]
 pub struct Transition {
-  pub(crate) event: String,
-  pub(crate) source: &'static str,
-  pub(crate) targets: Vec<&'static str>,
-  pub(crate) actions: Vec<Action>,
-  pub(crate) cond: Option<fn(/* context type */ Event) -> bool>,
-  pub(crate) order: i32,
-  pub(crate) kind: TransitionKind,
+  pub targets: &'static [&'static str],
+  pub actions: &'static [&'static Action],
+  pub guard: Option<fn(/* context type */ Event) -> bool>,
+  pub kind: TransitionKind,
+  pub source: &'static str,
+  /*
+    I don't think that event will be needed, as a state can just have the different types of events in their own lists:
+    - always (Eventless transitions)
+    - on (Event transitions (Event can be determined by the key of the map))
+    - onDone (done.state.*, done.invoke.* Events)
+    - onError (error.* Events)
+  */
+  // pub(crate) event: String,
+  // pub(crate) order: i32,
 }
 impl fmt::Debug for Transition {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     f.debug_struct("Transition")
-      .field("event", &self.event)
-      .field("source", &self.source)
-      .field("target", &self.targets)
-      // This can't actually be displayed?
-      // .field("cond", &self.cond)
+      .field("targets", &self.targets)
       .field("actions", &self.actions)
+      // This can't actually be displayed?
+      // .field("guard", &self.guard)
       .field("kind", &self.kind)
-      .field("order", &self.order)
+      .field("source", &self.source)
+      // .field("event", &self.event)
       .finish()
   }
 }
 impl Transition {
   pub fn stub() -> Self {
     Transition {
-      event: String::from(""),
-      source: "",
-      targets: vec![""],
-      actions: vec![],
-      cond: None,
-      order: 0,
+      targets: &[],
+      actions: &[],
+      guard: None,
       kind: TransitionKind::External,
+      source: "",
+      // event: String::from(""),
+      // order: 0,
     }
   }
 }

@@ -1,56 +1,47 @@
 use rust_charts::*;
 
 static SIMPLE_LIGHTS: Machine = {
-  let root = State::Compound(CompoundStateNode {
-    id: "root",
-    key: "root",
+  let green = State::Atomic(AtomicStateNode {
+    id: "green",
     parent: None,
-    on: phf_ordered_map! {},
-    initial: "root.green",
-    states: phf_ordered_map! {
-      "green" => "root.green",
-      "yellow" => "root.yellow",
-      "red" => "root.red",
-    },
-  });
-  let root_green = State::Atomic(AtomicStateNode {
-    id: "root.green",
-    key: "green",
-    parent: Some("root"),
     on: phf_ordered_map! {
       "TIMER" => &[
         Transition {
-          targets: &["root.yellow"],
-          cond: None,
+          targets: &["yellow"],
+          actions: &[],
+          guard: None,
           kind: TransitionKind::External,
+          source: "green"
         },
       ],
     },
   });
-  let root_yellow = State::Atomic(AtomicStateNode {
-    id: "root.yellow",
-    key: "yellow",
-    parent: Some("root"),
+  let yellow = State::Atomic(AtomicStateNode {
+    id: "yellow",
+    parent: None,
     on: phf_ordered_map! {
       "TIMER" => &[
         Transition {
-          targets: &["root.red"],
-          cond: None,
+          targets: &["red"],
+          actions: &[],
+          guard: None,
           kind: TransitionKind::External,
+          source: "yellow",
         },
       ],
     },
   });
-  let root_red = State::Atomic(AtomicStateNode {
-    id: "root.red",
-    key: "red",
-    parent: Some("root"),
+  let red = State::Atomic(AtomicStateNode {
+    id: "red",
+    parent: None,
     on: phf_ordered_map! {
       "TIMER" => &[
         Transition {
-          targets: &["root.green"],
-          cond: None,
+          targets: &["green"],
+          actions: &[],
+          guard: None,
           kind: TransitionKind::External,
+          source: "red",
         },
       ],
     },
@@ -58,30 +49,26 @@ static SIMPLE_LIGHTS: Machine = {
 
   Machine {
     id: "simple_lights",
-    root: "root",
+    initial: &Transition {
+      targets: &["green"],
+      actions: &[],
+      guard: None,
+      kind: TransitionKind::External,
+      source: "",
+    },
     states: phf_ordered_map! {
-      "root" => root,
-      "root.green" => root_green,
-      "root.yellow" => root_yellow,
-      "root.red" => root_red,
+      "green" => green,
+      "yellow" => yellow,
+      "red" => red,
     },
   }
 };
 
-// #[test]
-// pub fn machine_initial_state() {
-//   let mut lights = light_machine();
-
-//   assert_eq!(lights.initial_state().value, vec!["green"]);
-// }
-
 #[test]
-pub fn state_from() {
-  let yellow_state = SIMPLE_LIGHTS.state_from(vec!["yellow"]);
+pub fn machine_initial_state() {
+  let initial_state = SIMPLE_LIGHTS.initial_state();
 
-  println!("{:?}", SIMPLE_LIGHTS);
-
-  assert_eq!(yellow_state.value, vec!["yellow"]);
+  assert_eq!(initial_state.value, vec!["green"]);
 }
 
 // #[test]
@@ -106,4 +93,11 @@ pub fn state_from() {
 //   let red_state = lights.transition(yellow_state, "TIMER");
 
 //   assert_eq!(red_state.value, "red.walk");
+// }
+
+// #[test]
+// pub fn state_from() {
+//   let yellow_state = SIMPLE_LIGHTS.state_from(vec!["yellow"]);
+
+//   assert_eq!(yellow_state.value, vec!["yellow"]);
 // }
