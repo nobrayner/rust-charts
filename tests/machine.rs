@@ -7,6 +7,7 @@ static SIMPLE_LIGHTS: Machine = {
   let green = State::Atomic(AtomicStateNode {
     id: "green",
     parent: Some("scxml::root"),
+    always: &[],
     on: map! {
       "TIMER" => &[
         Transition {
@@ -18,10 +19,13 @@ static SIMPLE_LIGHTS: Machine = {
         },
       ],
     },
+    entry: &[],
+    exit: &[],
   });
   let yellow = State::Atomic(AtomicStateNode {
     id: "yellow",
     parent: Some("scxml::root"),
+    always: &[],
     on: map! {
       "TIMER" => &[
         Transition {
@@ -33,10 +37,13 @@ static SIMPLE_LIGHTS: Machine = {
         },
       ],
     },
+    entry: &[],
+    exit: &[],
   });
   let red = State::Atomic(AtomicStateNode {
     id: "red",
     parent: Some("scxml::root"),
+    always: &[],
     on: map! {
       "TIMER" => &[
         Transition {
@@ -48,6 +55,8 @@ static SIMPLE_LIGHTS: Machine = {
         },
       ],
     },
+    entry: &[],
+    exit: &[],
   });
 
   Machine {

@@ -102,26 +102,38 @@ mod tests {
     let grandparent = StateNode::Compound(CompoundStateNode {
       id: "grandparent",
       parent: None,
-      initial: None,
+      always: &[],
       on: map! {},
+      initial: None,
       states: &["grandparent.parent"],
+      entry: &[],
+      exit: &[],
     });
     let grandparent_parent = StateNode::Compound(CompoundStateNode {
       id: "grandparent.parent",
       parent: Some("grandparent"),
-      initial: None,
+      always: &[],
       on: map! {},
+      initial: None,
       states: &["grandparent.parent.child"],
+      entry: &[],
+      exit: &[],
     });
     let grandparent_parent_child = StateNode::Atomic(AtomicStateNode {
       id: "grandparent.parent.child",
       parent: Some("grandparent.parent"),
+      always: &[],
       on: map! {},
+      entry: &[],
+      exit: &[],
     });
     let orphan = StateNode::Atomic(AtomicStateNode {
       id: "orphan",
       parent: None,
+      always: &[],
       on: map! {},
+      entry: &[],
+      exit: &[],
     });
 
     map! {

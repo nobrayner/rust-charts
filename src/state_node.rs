@@ -5,6 +5,8 @@ use crate::{action::Action, transition::Transition};
 
 pub const SCXML_ROOT_ID: &str = "scxml::root";
 
+// TODO: onDone and onError transitions
+
 pub trait StateNode {
   fn id(&self) -> &'static str;
   fn initial(&self) -> Option<&'static Transition>;
