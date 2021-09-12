@@ -24,7 +24,7 @@ pub enum State {
   Root(RootStateNode),
   Atomic(AtomicStateNode),
   Compound(CompoundStateNode),
-  Final(&'static str),
+  Final(FinalStateNode),
   Parallel(&'static str),
   History(&'static str),
 }
@@ -158,6 +158,42 @@ impl StateNode for CompoundStateNode {
       Some(&transitions) => transitions.iter().collect(),
       None => vec![],
     }
+  }
+  fn entry_actions(&self) -> Vec<&'static Action> {
+    // TODO:
+    vec![]
+  }
+  fn exit_actions(&self) -> Vec<&'static Action> {
+    // TODO:
+    vec![]
+  }
+}
+
+pub struct FinalStateNode {
+  pub id: &'static str,
+  pub parent: Option<&'static str>,
+}
+impl StateNode for FinalStateNode {
+  fn id(&self) -> &'static str {
+    self.id
+  }
+  fn initial(&self) -> Option<&'static Transition> {
+    None
+  }
+  fn parent(&self) -> Option<&'static str> {
+    self.parent
+  }
+  fn child_state_ids(&self) -> &[&'static str] {
+    &[]
+  }
+  fn eventless_transitions(&self) -> Vec<&'static Transition> {
+    vec![]
+  }
+  fn transitions(&self) -> Vec<&'static Transition> {
+    vec![]
+  }
+  fn on(&self, _: &str) -> Vec<&'static Transition> {
+    vec![]
   }
   fn entry_actions(&self) -> Vec<&'static Action> {
     // TODO:
