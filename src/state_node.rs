@@ -85,6 +85,8 @@ pub struct AtomicStateNode {
   pub id: &'static str,
   pub parent: Option<&'static str>,
   pub on: OrderedMap<&'static str, &'static [Transition]>,
+  pub entry: &'static [&'static Action],
+  pub exit: &'static [&'static Action],
 }
 impl StateNode for AtomicStateNode {
   fn id(&self) -> &'static str {
@@ -115,12 +117,10 @@ impl StateNode for AtomicStateNode {
     }
   }
   fn entry_actions(&self) -> Vec<&'static Action> {
-    // TODO:
-    vec![]
+    self.entry.iter().map(|&a| a).collect()
   }
   fn exit_actions(&self) -> Vec<&'static Action> {
-    // TODO:
-    vec![]
+    self.exit.iter().map(|&a| a).collect()
   }
 }
 
@@ -130,6 +130,8 @@ pub struct CompoundStateNode {
   pub on: OrderedMap<&'static str, &'static [Transition]>,
   pub initial: Option<&'static Transition>,
   pub states: &'static [&'static str],
+  pub entry: &'static [&'static Action],
+  pub exit: &'static [&'static Action],
 }
 impl StateNode for CompoundStateNode {
   fn id(&self) -> &'static str {
@@ -160,18 +162,18 @@ impl StateNode for CompoundStateNode {
     }
   }
   fn entry_actions(&self) -> Vec<&'static Action> {
-    // TODO:
-    vec![]
+    self.entry.iter().map(|&a| a).collect()
   }
   fn exit_actions(&self) -> Vec<&'static Action> {
-    // TODO:
-    vec![]
+    self.exit.iter().map(|&a| a).collect()
   }
 }
 
 pub struct FinalStateNode {
   pub id: &'static str,
   pub parent: Option<&'static str>,
+  pub entry: &'static [&'static Action],
+  pub exit: &'static [&'static Action],
 }
 impl StateNode for FinalStateNode {
   fn id(&self) -> &'static str {
@@ -196,11 +198,9 @@ impl StateNode for FinalStateNode {
     vec![]
   }
   fn entry_actions(&self) -> Vec<&'static Action> {
-    // TODO:
-    vec![]
+    self.entry.iter().map(|&a| a).collect()
   }
   fn exit_actions(&self) -> Vec<&'static Action> {
-    // TODO:
-    vec![]
+    self.exit.iter().map(|&a| a).collect()
   }
 }
