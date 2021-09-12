@@ -1,5 +1,4 @@
 use phf::OrderedMap;
-use std::collections::HashMap;
 
 use crate::{event::Event, state_node::State as StateNode, transition::Transition};
 
@@ -31,15 +30,9 @@ pub fn is_descendant(
   is_descendant
 }
 
-pub fn guard_match(transition: &Transition) -> bool {
+pub fn guard_match(transition: &Transition, event: &Event) -> bool {
   match transition.guard {
-    Some(guard) => guard(
-      // FIXME: Use real event and context here?
-      Event {
-        name: String::from(""),
-        data: HashMap::new(),
-      },
-    ),
+    Some(guard) => guard(event),
     None => true,
   }
 }
@@ -76,7 +69,7 @@ pub fn get_proper_ancestor_ids<'s>(
   ancestors
 }
 
-pub fn is_in_final_state(
+pub fn _is_in_final_state(
   state_map: &OrderedMap<&'static str, StateNode>,
   configuration: &[&'static str],
   state_id: &'static str,
@@ -84,12 +77,12 @@ pub fn is_in_final_state(
   if let Some(state) = state_map.get(state_id) {
     match state {
       StateNode::Compound(_) => state.child_state_ids().into_iter().any(|child_id| {
-        is_in_final_state(state_map, configuration, child_id) && configuration.contains(child_id)
+        _is_in_final_state(state_map, configuration, child_id) && configuration.contains(child_id)
       }),
       StateNode::Parallel(_) => state
         .child_state_ids()
         .into_iter()
-        .all(|child_id| is_in_final_state(state_map, configuration, child_id)),
+        .all(|child_id| _is_in_final_state(state_map, configuration, child_id)),
       _ => false,
     }
   } else {

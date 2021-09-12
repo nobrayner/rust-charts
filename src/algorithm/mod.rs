@@ -29,7 +29,15 @@ pub fn initial_state(
   );
 
   // Step 1: Macro step
-  macrostep(state_map, &mut configuration, &mut internal_queue);
+  macrostep(
+    state_map,
+    &Event {
+      name: String::from("rust_charts::init"),
+      data: HashMap::new(),
+    },
+    &mut configuration,
+    &mut internal_queue,
+  );
 
   // Step 2: Invoke
   // TODO: Invoke states_to_invoke
@@ -74,7 +82,7 @@ pub fn event_loop_step(
 
   // Invoke anything based on the event
 
-  let enabled_transitions = select_transitions(state_map, triggered_event, &configuration);
+  let enabled_transitions = select_transitions(state_map, &triggered_event, &configuration);
 
   if !enabled_transitions.is_empty() {
     let mut microstep_actions = microstep(
@@ -88,7 +96,12 @@ pub fn event_loop_step(
   }
 
   // Step 1: Macro step
-  let mut macrostep_actions = macrostep(state_map, &mut configuration, &mut internal_queue);
+  let mut macrostep_actions = macrostep(
+    state_map,
+    &triggered_event,
+    &mut configuration,
+    &mut internal_queue,
+  );
   actions.append(&mut &mut macrostep_actions);
 
   // Step 2: Invoke
@@ -107,6 +120,7 @@ pub fn event_loop_step(
 
 fn macrostep(
   state_map: &OrderedMap<&'static str, StateNode>,
+  event: &Event,
   configuration: &mut Vec<&'static str>,
   internal_queue: &mut VecDeque<Event>,
 ) -> Vec<&'static Action> {
@@ -116,7 +130,7 @@ fn macrostep(
   let mut done = false;
 
   while done == false {
-    enabled_transitions = select_eventless_transitions(state_map, configuration);
+    enabled_transitions = select_eventless_transitions(state_map, event, configuration);
 
     if enabled_transitions.is_empty() {
       if internal_queue.is_empty() {
@@ -124,7 +138,7 @@ fn macrostep(
       } else {
         let maybe_event = internal_queue.pop_front();
         if let Some(internal_event) = maybe_event {
-          enabled_transitions = select_transitions(state_map, internal_event, &configuration);
+          enabled_transitions = select_transitions(state_map, &internal_event, &configuration);
         }
       }
     }
@@ -175,6 +189,7 @@ fn microstep(
 
 fn select_eventless_transitions(
   state_map: &OrderedMap<&'static str, StateNode>,
+  event: &Event,
   configuration: &[&'static str],
 ) -> Vec<&'static Transition> {
   let mut enabled_transitions = vec![];
@@ -209,7 +224,7 @@ fn select_eventless_transitions(
 
       if let Some(state) = state_map.get(state_id) {
         for transition in state.eventless_transitions() {
-          if utils::guard_match(transition) {
+          if utils::guard_match(transition, event) {
             enabled_transitions.push(transition);
             looping = false;
           }
@@ -223,7 +238,7 @@ fn select_eventless_transitions(
 
 fn select_transitions(
   state_map: &OrderedMap<&'static str, StateNode>,
-  event: Event,
+  event: &Event,
   configuration: &[&'static str],
 ) -> Vec<&'static Transition> {
   let mut enabled_transitions = vec![];
@@ -258,7 +273,7 @@ fn select_transitions(
 
       if let Some(state) = state_map.get(state_id) {
         for transition in state.on(&event.name) {
-          if utils::guard_match(transition) {
+          if utils::guard_match(transition, event) {
             enabled_transitions.push(transition);
             looping = false;
           }
