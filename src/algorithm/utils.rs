@@ -19,7 +19,7 @@ pub fn is_descendant(
           marker = parent;
         } else {
           // Technically shouldn't be possible
-          panic!("Invalid state \"{}\"", parent_id);
+          panic!("Invalid state: {}", parent_id);
         }
       } else {
         is_descendant = true;
@@ -65,7 +65,7 @@ pub fn get_proper_ancestor_ids<'s>(
           marker = parent.parent();
         } else {
           // Technically shouldn't be possible
-          panic!("Invalid state \"{}\"", parent_id);
+          panic!("Invalid state: {}", parent_id);
         }
       } else {
         break;
@@ -100,36 +100,38 @@ pub fn is_in_final_state(
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::state_node::{AtomicStateNode, CompoundStateNode, State as StateNode};
-  use phf::phf_ordered_map;
+  use crate::{
+    map,
+    state_node::{AtomicStateNode, CompoundStateNode, State as StateNode},
+  };
 
   static STATE_MAP: OrderedMap<&'static str, StateNode> = {
     let grandparent = StateNode::Compound(CompoundStateNode {
       id: "grandparent",
       parent: None,
       initial: None,
-      on: phf_ordered_map! {},
+      on: map! {},
       states: &["grandparent.parent"],
     });
     let grandparent_parent = StateNode::Compound(CompoundStateNode {
       id: "grandparent.parent",
       parent: Some("grandparent"),
       initial: None,
-      on: phf_ordered_map! {},
+      on: map! {},
       states: &["grandparent.parent.child"],
     });
     let grandparent_parent_child = StateNode::Atomic(AtomicStateNode {
       id: "grandparent.parent.child",
       parent: Some("grandparent.parent"),
-      on: phf_ordered_map! {},
+      on: map! {},
     });
     let orphan = StateNode::Atomic(AtomicStateNode {
       id: "orphan",
       parent: None,
-      on: phf_ordered_map! {},
+      on: map! {},
     });
 
-    phf_ordered_map! {
+    map! {
       "grandparent" => grandparent,
       "grandparent.parent" => grandparent_parent,
       "grandparent.parent.child" => grandparent_parent_child,
@@ -173,6 +175,7 @@ mod tests {
 
     assert_eq!(
       get_proper_ancestor_ids(&STATE_MAP, "grandparent.parent.child", None),
+      // NOTE: This also validates the returned vec is in ancestry order (walking up the tree)
       vec!["grandparent.parent", "grandparent"]
     );
 

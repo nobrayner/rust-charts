@@ -1,7 +1,7 @@
 use phf;
-use std::fmt;
+use std::{collections::HashMap, fmt};
 
-use crate::{algorithm, state::State, state_node, Transition};
+use crate::{algorithm, event::Event, state::State, state_node, Transition};
 
 pub struct Machine {
   pub id: &'static str,
@@ -11,6 +11,17 @@ pub struct Machine {
 impl Machine {
   pub fn initial_state(&self) -> State {
     algorithm::initial_state(&self.states, self.initial)
+  }
+
+  pub fn transition(&self, state: State, event: &str) -> State {
+    algorithm::event_loop_step(
+      &self.states,
+      state,
+      Event {
+        name: String::from(event),
+        data: HashMap::new(),
+      },
+    )
   }
 
   // pub fn state_from(&self, state_values: Vec<&'static str>) -> State {

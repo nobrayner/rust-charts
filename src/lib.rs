@@ -11,4 +11,4 @@ pub use state_node::*;
 pub use transition::{Transition, TransitionKind};
 
 // Re-export required phf things
-pub use phf::phf_ordered_map;
+pub use phf::phf_ordered_map as map;

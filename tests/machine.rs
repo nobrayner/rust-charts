@@ -1,10 +1,13 @@
-use rust_charts::*;
+use rust_charts::Machine;
 
 static SIMPLE_LIGHTS: Machine = {
+  use rust_charts::*;
+
+  let scxml_root = State::Root(RootStateNode {});
   let green = State::Atomic(AtomicStateNode {
     id: "green",
-    parent: None,
-    on: phf_ordered_map! {
+    parent: Some("scxml::root"),
+    on: map! {
       "TIMER" => &[
         Transition {
           targets: &["yellow"],
@@ -18,8 +21,8 @@ static SIMPLE_LIGHTS: Machine = {
   });
   let yellow = State::Atomic(AtomicStateNode {
     id: "yellow",
-    parent: None,
-    on: phf_ordered_map! {
+    parent: Some("scxml::root"),
+    on: map! {
       "TIMER" => &[
         Transition {
           targets: &["red"],
@@ -33,8 +36,8 @@ static SIMPLE_LIGHTS: Machine = {
   });
   let red = State::Atomic(AtomicStateNode {
     id: "red",
-    parent: None,
-    on: phf_ordered_map! {
+    parent: Some("scxml::root"),
+    on: map! {
       "TIMER" => &[
         Transition {
           targets: &["green"],
@@ -56,7 +59,9 @@ static SIMPLE_LIGHTS: Machine = {
       kind: TransitionKind::External,
       source: "",
     },
-    states: phf_ordered_map! {
+    states: map! {
+      // TODO: Use the const (crate::state_node::SCXML_ROOT_ID) somehow
+      "scxml::root" => scxml_root,
       "green" => green,
       "yellow" => yellow,
       "red" => red,
@@ -68,7 +73,18 @@ static SIMPLE_LIGHTS: Machine = {
 pub fn machine_initial_state() {
   let initial_state = SIMPLE_LIGHTS.initial_state();
 
-  assert_eq!(initial_state.value, vec!["green"]);
+  assert_eq!(initial_state.configuration, vec!["green"]);
+}
+
+#[test]
+pub fn machine() {
+  let yellow_state = SIMPLE_LIGHTS.transition(SIMPLE_LIGHTS.initial_state(), "TIMER");
+
+  assert_eq!(yellow_state.configuration, vec!["yellow"]);
+
+  let red_state = SIMPLE_LIGHTS.transition(yellow_state, "TIMER");
+
+  assert_eq!(red_state.configuration, vec!["red"]);
 }
 
 // #[test]
