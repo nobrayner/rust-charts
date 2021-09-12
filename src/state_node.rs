@@ -84,6 +84,7 @@ impl StateNode for RootStateNode {
 pub struct AtomicStateNode {
   pub id: &'static str,
   pub parent: Option<&'static str>,
+  pub always: &'static [Transition],
   pub on: OrderedMap<&'static str, &'static [Transition]>,
   pub entry: &'static [&'static Action],
   pub exit: &'static [&'static Action],
@@ -102,8 +103,7 @@ impl StateNode for AtomicStateNode {
     &[]
   }
   fn eventless_transitions(&self) -> Vec<&'static Transition> {
-    // TODO: always property
-    vec![]
+    self.always.iter().collect()
   }
   fn transitions(&self) -> Vec<&'static Transition> {
     let values = self.on.values();
@@ -127,6 +127,7 @@ impl StateNode for AtomicStateNode {
 pub struct CompoundStateNode {
   pub id: &'static str,
   pub parent: Option<&'static str>,
+  pub always: &'static [Transition],
   pub on: OrderedMap<&'static str, &'static [Transition]>,
   pub initial: Option<&'static Transition>,
   pub states: &'static [&'static str],
@@ -147,8 +148,7 @@ impl StateNode for CompoundStateNode {
     self.states
   }
   fn eventless_transitions(&self) -> Vec<&'static Transition> {
-    // TODO: always property
-    vec![]
+    self.always.iter().collect()
   }
   fn transitions(&self) -> Vec<&'static Transition> {
     let values = self.on.values();
