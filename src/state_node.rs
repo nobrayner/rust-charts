@@ -27,7 +27,7 @@ pub enum State {
   Atomic(AtomicStateNode),
   Compound(CompoundStateNode),
   Final(FinalStateNode),
-  Parallel(&'static str),
+  Parallel(ParallelStateNode),
   History(&'static str),
 }
 impl Deref for State {
@@ -198,6 +198,52 @@ impl StateNode for FinalStateNode {
   }
   fn on(&self, _: &str) -> Vec<&'static Transition> {
     vec![]
+  }
+  fn entry_actions(&self) -> Vec<&'static Action> {
+    self.entry.iter().map(|&a| a).collect()
+  }
+  fn exit_actions(&self) -> Vec<&'static Action> {
+    self.exit.iter().map(|&a| a).collect()
+  }
+}
+
+pub struct ParallelStateNode {
+  pub id: &'static str,
+  pub parent: Option<&'static str>,
+  pub always: &'static [Transition],
+  pub on: OrderedMap<&'static str, &'static [Transition]>,
+  pub initial: Option<&'static Transition>,
+  pub states: &'static [&'static str],
+  pub entry: &'static [&'static Action],
+  pub exit: &'static [&'static Action],
+}
+impl StateNode for ParallelStateNode {
+  fn id(&self) -> &'static str {
+    self.id
+  }
+  fn parent(&self) -> Option<&'static str> {
+    self.parent
+  }
+  fn initial(&self) -> Option<&'static Transition> {
+    // TODO: Figure out how to make this hard-coded instead of provided...
+    self.initial
+  }
+  fn child_state_ids(&self) -> &'static [&'static str] {
+    self.states
+  }
+  fn eventless_transitions(&self) -> Vec<&'static Transition> {
+    self.always.iter().collect()
+  }
+  fn transitions(&self) -> Vec<&'static Transition> {
+    let values = self.on.values();
+
+    values.flat_map(|v| *v).collect()
+  }
+  fn on(&self, event_name: &str) -> Vec<&'static Transition> {
+    match self.on.get(event_name) {
+      Some(&transitions) => transitions.iter().collect(),
+      None => vec![],
+    }
   }
   fn entry_actions(&self) -> Vec<&'static Action> {
     self.entry.iter().map(|&a| a).collect()

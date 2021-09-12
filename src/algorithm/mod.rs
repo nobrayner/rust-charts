@@ -13,7 +13,7 @@ pub mod utils;
 
 pub fn initial_state(
   state_map: &OrderedMap<&'static str, StateNode>,
-  initial_transition: &'static Transition,
+  initial_transition: &Transition,
 ) -> State {
   let mut internal_queue = VecDeque::new();
   let mut configuration = vec![];
@@ -98,6 +98,7 @@ pub fn event_loop_step(
   // Step 1: Macro step
   let mut macrostep_actions = macrostep(
     state_map,
+    // TODO: Is this correct?
     &triggered_event,
     &mut configuration,
     &mut internal_queue,

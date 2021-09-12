@@ -1,16 +1,16 @@
 use phf;
 use std::{collections::HashMap, fmt};
 
-use crate::{algorithm, event::Event, state::State, state_node, Transition};
+use crate::{algorithm, event::Event, state::State, state_node::State as StateNode, Transition};
 
 pub struct Machine {
   pub id: &'static str,
-  pub initial: &'static Transition,
-  pub states: phf::OrderedMap<&'static str, state_node::State>,
+  pub initial: Transition,
+  pub states: phf::OrderedMap<&'static str, StateNode>,
 }
 impl Machine {
   pub fn initial_state(&self) -> State {
-    algorithm::initial_state(&self.states, self.initial)
+    algorithm::initial_state(&self.states, &self.initial)
   }
 
   pub fn transition(&self, state: State, event: &str) -> State {
