@@ -14,15 +14,6 @@ pub struct Transition {
   pub guard: Option<fn(/* context type */ &Event) -> bool>,
   pub kind: TransitionKind,
   pub source: &'static str,
-  /*
-    I don't think that event will be needed, as a state can just have the different types of events in their own lists:
-    - always (Eventless transitions)
-    - on (Event transitions (Event can be determined by the key of the map))
-    - onDone (done.state.*, done.invoke.* Events)
-    - onError (error.* Events)
-  */
-  // pub(crate) event: String,
-  // pub(crate) order: i32,
 }
 impl PartialEq for Transition {
   fn eq(&self, other: &Self) -> bool {
@@ -38,10 +29,15 @@ impl fmt::Debug for Transition {
       .field("targets", &self.targets)
       .field("actions", &self.actions)
       // This can't actually be displayed?
-      // .field("guard", &self.guard)
+      .field(
+        "guard",
+        match &self.guard {
+          Some(_) => &"fn (Event) -> bool",
+          None => &"None",
+        },
+      )
       .field("kind", &self.kind)
       .field("source", &self.source)
-      // .field("event", &self.event)
       .finish()
   }
 }
@@ -53,8 +49,6 @@ impl Transition {
       guard: None,
       kind: TransitionKind::External,
       source: "",
-      // event: String::from(""),
-      // order: 0,
     }
   }
 }
