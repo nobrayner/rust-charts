@@ -6,7 +6,7 @@ pub static SIMPLE_LIGHTS: Machine = {
   let scxml_root = State::Root(RootStateNode {});
   let green = State::Atomic(AtomicStateNode {
     id: "green",
-    parent: Some(SCXML_ROOT_ID),
+    parent: SCXML_ROOT_ID,
     always: &[],
     on: map! {
       "TIMER" => &[
@@ -24,7 +24,7 @@ pub static SIMPLE_LIGHTS: Machine = {
   });
   let yellow = State::Atomic(AtomicStateNode {
     id: "yellow",
-    parent: Some(SCXML_ROOT_ID),
+    parent: SCXML_ROOT_ID,
     always: &[],
     on: map! {
       "TIMER" => &[
@@ -42,7 +42,7 @@ pub static SIMPLE_LIGHTS: Machine = {
   });
   let red = State::Compound(CompoundStateNode {
     id: "red",
-    parent: Some(SCXML_ROOT_ID),
+    parent: SCXML_ROOT_ID,
     always: &[],
     on: map! {
       "TIMER" => &[
@@ -77,7 +77,7 @@ pub static SIMPLE_LIGHTS: Machine = {
   });
   let red_walk = State::Atomic(AtomicStateNode {
     id: "red.walk",
-    parent: Some("red"),
+    parent: "red",
     always: &[],
     on: map! {
       "COUNTDOWN" => &[
@@ -95,7 +95,7 @@ pub static SIMPLE_LIGHTS: Machine = {
   });
   let red_wait = State::Atomic(AtomicStateNode {
     id: "red.wait",
-    parent: Some("red"),
+    parent: "red",
     always: &[],
     on: map! {
       "COUNTDOWN" => &[
@@ -113,7 +113,7 @@ pub static SIMPLE_LIGHTS: Machine = {
   });
   let red_stop = State::Atomic(AtomicStateNode {
     id: "red.stop",
-    parent: Some("red"),
+    parent: "red",
     always: &[],
     on: map! {
       "TIMEOUT" => &[
@@ -131,7 +131,7 @@ pub static SIMPLE_LIGHTS: Machine = {
   });
   let red_timeout = State::Final(FinalStateNode {
     id: "red.timeout",
-    parent: Some("red"),
+    parent: "red",
     entry: &[],
     exit: &[],
   });

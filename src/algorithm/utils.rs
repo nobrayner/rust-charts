@@ -43,10 +43,15 @@ pub fn get_proper_ancestor_ids<'s>(
   maybe_ancestor_id: Option<&'s str>,
 ) -> Vec<&'s str> {
   let mut ancestors = vec![];
+  let mut ancestor_found = maybe_ancestor_id.is_none();
   let ancestor_id = match maybe_ancestor_id {
     Some(id) => id,
     None => "",
   };
+
+  if state_id == ancestor_id {
+    return ancestors;
+  }
 
   if let Some(state) = state_map.get(state_id) {
     let mut marker = state.parent();
@@ -61,12 +66,17 @@ pub fn get_proper_ancestor_ids<'s>(
           panic!("Invalid state: {}", parent_id);
         }
       } else {
+        ancestor_found = true;
         break;
       }
     }
   }
 
-  ancestors
+  if ancestor_found {
+    ancestors
+  } else {
+    vec![]
+  }
 }
 
 pub fn _is_in_final_state(
@@ -96,12 +106,14 @@ mod tests {
   use crate::{
     map,
     state_node::{AtomicStateNode, CompoundStateNode, State as StateNode},
+    RootStateNode, SCXML_ROOT_ID,
   };
 
   static STATE_MAP: OrderedMap<&'static str, StateNode> = {
+    let scxml_root = StateNode::Root(RootStateNode {});
     let grandparent = StateNode::Compound(CompoundStateNode {
       id: "grandparent",
-      parent: None,
+      parent: SCXML_ROOT_ID,
       always: &[],
       on: map! {},
       initial: None,
@@ -111,7 +123,7 @@ mod tests {
     });
     let grandparent_parent = StateNode::Compound(CompoundStateNode {
       id: "grandparent.parent",
-      parent: Some("grandparent"),
+      parent: "grandparent",
       always: &[],
       on: map! {},
       initial: None,
@@ -121,7 +133,7 @@ mod tests {
     });
     let grandparent_parent_child = StateNode::Atomic(AtomicStateNode {
       id: "grandparent.parent.child",
-      parent: Some("grandparent.parent"),
+      parent: "grandparent.parent",
       always: &[],
       on: map! {},
       entry: &[],
@@ -129,7 +141,7 @@ mod tests {
     });
     let orphan = StateNode::Atomic(AtomicStateNode {
       id: "orphan",
-      parent: None,
+      parent: SCXML_ROOT_ID,
       always: &[],
       on: map! {},
       entry: &[],
@@ -137,6 +149,7 @@ mod tests {
     });
 
     map! {
+      "scxml::root" => scxml_root,
       "grandparent" => grandparent,
       "grandparent.parent" => grandparent_parent,
       "grandparent.parent.child" => grandparent_parent_child,
@@ -181,22 +194,24 @@ mod tests {
     assert_eq!(
       get_proper_ancestor_ids(&STATE_MAP, "grandparent.parent.child", None),
       // NOTE: This also validates the returned vec is in ancestry order (walking up the tree)
-      vec!["grandparent.parent", "grandparent"]
+      vec!["grandparent.parent", "grandparent", SCXML_ROOT_ID]
     );
 
     assert_eq!(
       get_proper_ancestor_ids(&STATE_MAP, "grandparent.parent", Some("grandparent")),
-      vec![] as Vec<&str>
+      vec![] as Vec<&str>,
     );
 
     assert_eq!(
       get_proper_ancestor_ids(&STATE_MAP, "grandparent", Some("grandparent")),
-      vec![] as Vec<&str>
+      vec![] as Vec<&str>,
+      "same node should return empty"
     );
 
     assert_eq!(
       get_proper_ancestor_ids(&STATE_MAP, "grandparent", Some("grandparent.parent")),
-      vec![] as Vec<&str>
+      vec![] as Vec<&str>,
+      "descendant should return empty"
     );
   }
 }

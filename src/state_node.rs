@@ -90,7 +90,7 @@ impl StateNode for RootStateNode {
 
 pub struct AtomicStateNode {
   pub id: &'static str,
-  pub parent: Option<&'static str>,
+  pub parent: &'static str,
   pub always: &'static [&'static Transition],
   pub on: OrderedMap<&'static str, &'static [&'static Transition]>,
   pub entry: &'static [&'static Action],
@@ -101,7 +101,7 @@ impl StateNode for AtomicStateNode {
     self.id
   }
   fn parent(&self) -> Option<&'static str> {
-    self.parent
+    Some(self.parent)
   }
   fn initial(&self) -> Option<&'static Transition> {
     None
@@ -135,7 +135,7 @@ impl StateNode for AtomicStateNode {
 
 pub struct CompoundStateNode {
   pub id: &'static str,
-  pub parent: Option<&'static str>,
+  pub parent: &'static str,
   pub always: &'static [&'static Transition],
   pub on: OrderedMap<&'static str, &'static [&'static Transition]>,
   pub initial: Option<&'static Transition>,
@@ -148,7 +148,7 @@ impl StateNode for CompoundStateNode {
     self.id
   }
   fn parent(&self) -> Option<&'static str> {
-    self.parent
+    Some(self.parent)
   }
   fn initial(&self) -> Option<&'static Transition> {
     self.initial
@@ -182,7 +182,7 @@ impl StateNode for CompoundStateNode {
 
 pub struct FinalStateNode {
   pub id: &'static str,
-  pub parent: Option<&'static str>,
+  pub parent: &'static str,
   pub entry: &'static [&'static Action],
   pub exit: &'static [&'static Action],
 }
@@ -194,7 +194,7 @@ impl StateNode for FinalStateNode {
     None
   }
   fn parent(&self) -> Option<&'static str> {
-    self.parent
+    Some(self.parent)
   }
   fn child_state_ids(&self) -> &[&'static str] {
     &[]
@@ -218,7 +218,7 @@ impl StateNode for FinalStateNode {
 
 pub struct ParallelStateNode {
   pub id: &'static str,
-  pub parent: Option<&'static str>,
+  pub parent: &'static str,
   pub always: &'static [Transition],
   pub on: OrderedMap<&'static str, &'static [Transition]>,
   pub initial: Option<&'static Transition>,
@@ -231,7 +231,7 @@ impl StateNode for ParallelStateNode {
     self.id
   }
   fn parent(&self) -> Option<&'static str> {
-    self.parent
+    Some(self.parent)
   }
   fn initial(&self) -> Option<&'static Transition> {
     // TODO: Figure out how to make this hard-coded instead of provided...
