@@ -79,7 +79,7 @@ pub fn get_proper_ancestor_ids<'s>(
   }
 }
 
-pub fn _is_in_final_state(
+pub fn is_in_final_state(
   state_map: &OrderedMap<&'static str, StateNode>,
   configuration: &[&'static str],
   state_id: &'static str,
@@ -87,12 +87,12 @@ pub fn _is_in_final_state(
   if let Some(state) = state_map.get(state_id) {
     match state {
       StateNode::Compound(_) => state.child_state_ids().into_iter().any(|child_id| {
-        _is_in_final_state(state_map, configuration, child_id) && configuration.contains(child_id)
+        is_in_final_state(state_map, configuration, child_id) && configuration.contains(child_id)
       }),
       StateNode::Parallel(_) => state
         .child_state_ids()
         .into_iter()
-        .all(|child_id| _is_in_final_state(state_map, configuration, child_id)),
+        .all(|child_id| is_in_final_state(state_map, configuration, child_id)),
       _ => false,
     }
   } else {

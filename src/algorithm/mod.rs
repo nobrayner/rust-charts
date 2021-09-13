@@ -449,20 +449,24 @@ fn enter_states(
 
             if let Some(parent) = state_map.get(parent_id) {
               if let Some(grandparent_id) = parent.parent() {
-                if let Some(StateNode::Parallel(_grandparent)) = state_map.get(grandparent_id) {
-                  // TODO: Parallel states
-                  // if grandparent
-                  //   .child_state_ids()
-                  //   .into_iter()
-                  //   .all(|child_state_id| {
-                  //     utils::is_in_final_state(state_map, &configuration, child_state_id)
-                  //   })
-                  // {
-                  //   internal_queue.push_back(Event {
-                  //     name: String::from("done.state.") + grandparent_id,
-                  //     data: HashMap::new(),
-                  //   })
-                  // }
+                if let Some(grandparent) = state_map.get(grandparent_id) {
+                  match grandparent {
+                    StateNode::Parallel(_) => {
+                      if grandparent
+                        .child_state_ids()
+                        .into_iter()
+                        .all(|child_state_id| {
+                          utils::is_in_final_state(state_map, &configuration, child_state_id)
+                        })
+                      {
+                        internal_queue.push_back(Event {
+                          name: String::from("done.state.") + grandparent_id,
+                          data: HashMap::new(),
+                        })
+                      }
+                    }
+                    _ => (),
+                  }
                 }
               }
             }
