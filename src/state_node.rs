@@ -28,7 +28,7 @@ pub enum State {
   Compound(CompoundStateNode),
   Final(FinalStateNode),
   Parallel(ParallelStateNode),
-  History(&'static str),
+  History(HistoryStateNode),
 }
 impl Deref for State {
   type Target = dyn StateNode;
@@ -40,16 +40,19 @@ impl Deref for State {
       Self::Compound(s) => s,
       Self::Final(s) => s,
       Self::Parallel(s) => s,
-      _ => panic!("Not implemented yet!"),
+      Self::History(s) => s,
     }
   }
 }
 impl fmt::Debug for State {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self {
+      Self::Root(_) => write!(f, "<StateNode \"{}\">", SCXML_ROOT_ID),
       Self::Atomic(s) => write!(f, "<StateNode \"{}\">", &s.id),
       Self::Compound(s) => write!(f, "<StateNode \"{}\">", &s.id),
-      _ => panic!("Not implemented yet!"),
+      Self::Final(s) => write!(f, "<StateNode \"{}\">", &s.id),
+      Self::Parallel(s) => write!(f, "<StateNode \"{}\">", &s.id),
+      Self::History(s) => write!(f, "<StateNode \"{}\">", &s.id),
     }
   }
 }
@@ -256,5 +259,45 @@ impl StateNode for ParallelStateNode {
   }
   fn exit_actions(&self) -> Vec<&'static Action> {
     self.exit.iter().map(|&a| a).collect()
+  }
+}
+
+pub enum HistoryKind {
+  Shallow,
+  Deep,
+}
+pub struct HistoryStateNode {
+  pub id: &'static str,
+  pub parent: &'static str,
+  pub kind: HistoryKind,
+  pub transition: &'static Transition,
+}
+impl StateNode for HistoryStateNode {
+  fn id(&self) -> &'static str {
+    self.id
+  }
+  fn initial(&self) -> Option<&'static Transition> {
+    None
+  }
+  fn parent(&self) -> Option<&'static str> {
+    Some(self.parent)
+  }
+  fn child_state_ids(&self) -> &[&'static str] {
+    &[]
+  }
+  fn eventless_transitions(&self) -> Vec<&'static Transition> {
+    vec![]
+  }
+  fn transitions(&self) -> Vec<&'static Transition> {
+    vec![self.transition]
+  }
+  fn on(&self, _: &str) -> Vec<&'static Transition> {
+    vec![]
+  }
+  fn entry_actions(&self) -> Vec<&'static Action> {
+    vec![]
+  }
+  fn exit_actions(&self) -> Vec<&'static Action> {
+    vec![]
   }
 }
