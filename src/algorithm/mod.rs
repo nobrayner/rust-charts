@@ -50,6 +50,7 @@ pub fn initial_state(
     configuration,
     // configuration,
     actions,
+    history: HashMap::new(),
   }
 }
 

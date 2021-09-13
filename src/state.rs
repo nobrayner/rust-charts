@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{collections::HashMap, fmt};
 
 use crate::action::Action;
 
@@ -7,6 +7,7 @@ pub struct State {
   pub configuration: Vec<&'static str>,
   // pub context: HashMap<String, String>,
   pub actions: Vec<&'static Action>,
+  pub history: HashMap<&'static str, Vec<&'static str>>,
 }
 impl fmt::Debug for State {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -16,15 +17,5 @@ impl fmt::Debug for State {
       // .field("context", &self.context)
       .field("actions", &self.actions)
       .finish()
-  }
-}
-impl State {
-  pub fn stub() -> Self {
-    Self {
-      // value: vec![],
-      // context: HashMap::new(),
-      configuration: vec![],
-      actions: vec![],
-    }
   }
 }
