@@ -16,16 +16,20 @@ pub fn initial_state(
   initial_transition: &Transition,
 ) -> State {
   let mut internal_queue = VecDeque::new();
-  let mut configuration = vec![];
   // let mut states_to_invoke = vec![];
-
   let transitions = vec![initial_transition];
 
-  let actions = enter_states(
+  let mut initial_state = State {
+    configuration: vec![],
+    actions: vec![],
+    history: HashMap::new(),
+  };
+
+  enter_states(
     state_map,
     &transitions,
-    &mut configuration,
     &mut internal_queue,
+    &mut initial_state,
   );
 
   // Step 1: Macro step
@@ -35,8 +39,8 @@ pub fn initial_state(
       name: String::from("rust_charts::init"),
       data: HashMap::new(),
     },
-    &mut configuration,
     &mut internal_queue,
+    &mut initial_state,
   );
 
   // Step 2: Invoke
@@ -46,12 +50,7 @@ pub fn initial_state(
   // TODO: perform another event loop step if there are errors?
   // if !internal_queue.is_empty() { macrostep(); }
 
-  State {
-    configuration,
-    // configuration,
-    actions,
-    history: HashMap::new(),
-  }
+  initial_state
 }
 
 /*
@@ -69,13 +68,13 @@ process external event, macrostep, invoke, macrostep for invoke errors
 */
 pub fn event_loop_step(
   state_map: &OrderedMap<&'static str, StateNode>,
-  current_state: State,
+  mut current_state: State,
   triggered_event: Event,
 ) -> State {
   let mut internal_queue = VecDeque::new();
-  let mut actions = vec![];
 
-  let mut configuration = current_state.configuration;
+  // Reset actions queue
+  current_state.actions = vec![];
 
   // Step 4: Process external event
   // TODO: Cancel event performs any cleanup that needs to occur
@@ -83,28 +82,26 @@ pub fn event_loop_step(
 
   // Invoke anything based on the event
 
-  let enabled_transitions = select_transitions(state_map, &triggered_event, &configuration);
+  let enabled_transitions =
+    select_transitions(state_map, &triggered_event, &current_state.configuration);
 
   if !enabled_transitions.is_empty() {
-    let mut microstep_actions = microstep(
+    microstep(
       state_map,
       &enabled_transitions,
-      &mut configuration,
       &mut internal_queue,
+      &mut current_state,
     );
-
-    actions.append(&mut microstep_actions);
   }
 
   // Step 1: Macro step
-  let mut macrostep_actions = macrostep(
+  macrostep(
     state_map,
     // TODO: Is this correct?
     &triggered_event,
-    &mut configuration,
     &mut internal_queue,
+    &mut current_state,
   );
-  actions.append(&mut &mut macrostep_actions);
 
   // Step 2: Invoke
   // TODO: Invoke states_to_invoke
@@ -113,26 +110,22 @@ pub fn event_loop_step(
   // TODO: perform another event loop step if there are errors?
   // if !internal_queue.is_empty() { macrostep(); }
 
-  State {
-    configuration,
-    actions,
-    ..current_state
-  }
+  current_state
 }
 
 fn macrostep(
   state_map: &OrderedMap<&'static str, StateNode>,
   event: &Event,
-  configuration: &mut Vec<&'static str>,
   internal_queue: &mut VecDeque<Event>,
-) -> Vec<&'static Action> {
+  current_state: &mut State,
+) {
   let mut enabled_transitions;
-  let mut actions = vec![];
 
   let mut done = false;
 
   while done == false {
-    enabled_transitions = select_eventless_transitions(state_map, event, configuration);
+    enabled_transitions =
+      select_eventless_transitions(state_map, event, &current_state.configuration);
 
     if enabled_transitions.is_empty() {
       if internal_queue.is_empty() {
@@ -140,53 +133,43 @@ fn macrostep(
       } else {
         let maybe_event = internal_queue.pop_front();
         if let Some(internal_event) = maybe_event {
-          enabled_transitions = select_transitions(state_map, &internal_event, &configuration);
+          enabled_transitions =
+            select_transitions(state_map, &internal_event, &current_state.configuration);
         }
       }
     }
     if !enabled_transitions.is_empty() {
-      let mut microstep_actions = microstep(
+      microstep(
         state_map,
         &enabled_transitions,
-        configuration,
         internal_queue,
+        current_state,
       );
-
-      actions.append(&mut microstep_actions);
     }
   }
-
-  actions
 }
 
 fn microstep(
   state_map: &OrderedMap<&'static str, StateNode>,
   enabled_transitions: &[&Transition],
-  configuration: &mut Vec<&'static str>,
   internal_queue: &mut VecDeque<Event>,
-) -> Vec<&'static Action> {
-  let exit_actions = exit_states(state_map, enabled_transitions, configuration);
+  current_state: &mut State,
+) {
+  exit_states(state_map, enabled_transitions, current_state);
 
   // TODO: Accumulate transition actions
-  let transition_actions = enabled_transitions.iter().fold(vec![], |mut actions, &t| {
+  enabled_transitions.iter().for_each(|&t| {
     for &action in t.actions {
-      actions.push(action);
+      current_state.actions.push(action);
     }
-
-    actions
   });
 
-  let enter_actions = enter_states(
+  enter_states(
     state_map,
     enabled_transitions,
-    configuration,
     internal_queue,
+    current_state,
   );
-
-  vec![exit_actions, transition_actions, enter_actions]
-    .into_iter()
-    .flatten()
-    .collect()
 }
 
 fn select_eventless_transitions(
@@ -335,10 +318,10 @@ fn remove_conflicting_transitions(
 fn exit_states(
   state_map: &OrderedMap<&'static str, StateNode>,
   enabled_transitions: &[&Transition],
-  configuration: &mut Vec<&'static str>,
-) -> Vec<&'static Action> {
-  let state_ids_to_exit = compute_exit_set(state_map, enabled_transitions, configuration);
-  let mut actions = vec![];
+  current_state: &mut State,
+) {
+  let state_ids_to_exit =
+    compute_exit_set(state_map, enabled_transitions, &current_state.configuration);
 
   for &_state_id in &state_ids_to_exit {
     // TODO: states_to_invoke
@@ -363,23 +346,16 @@ fn exit_states(
   }
   for &state_id in &state_ids_to_exit {
     if let Some(state) = state_map.get(state_id) {
-      for action in state.exit_actions() {
-        actions.push(action);
-      }
+      current_state.actions.extend(state.exit_actions());
 
       // TODO: Invoking stuff
       // for inv in state.invoke() {
       //   cancel_invoke(inv);
       // }
 
-      let maybe_state_id_index = configuration.iter().position(|&s| s == state_id);
-      if let Some(state_id_index) = maybe_state_id_index {
-        configuration.remove(state_id_index);
-      }
+      current_state.remove_configuration(state_id);
     }
   }
-
-  actions
 }
 
 fn compute_exit_set(
@@ -409,33 +385,31 @@ fn compute_exit_set(
 fn enter_states(
   state_map: &OrderedMap<&'static str, StateNode>,
   enabled_transitions: &[&Transition],
-  configuration: &mut Vec<&'static str>,
   internal_queue: &mut VecDeque<Event>,
-) -> Vec<&'static Action> {
+  current_state: &mut State,
+) {
   let (state_ids_to_enter, state_ids_for_default_entry, default_history_actions) =
     compute_entry_set(state_map, enabled_transitions);
-  let mut actions_to_execute = vec![];
 
   // TODO: Sort by `entry_order`
   for state_id in state_ids_to_enter {
     if let Some(state) = state_map.get(state_id) {
-      configuration.push(state_id);
+      current_state.add_configuration(state_id);
+
       // TODO: states_to_invoke
       // states_to_invoke.push(state_id);
 
-      for action in state.entry_actions() {
-        actions_to_execute.push(action);
-      }
+      current_state.actions.extend(state.entry_actions());
       if state_ids_for_default_entry.contains(&state_id) {
         if let Some(transition) = state.initial() {
-          for action in transition.actions {
-            actions_to_execute.push(action);
+          for &action in transition.actions {
+            current_state.actions.push(action);
           }
         }
       }
       if let Some(&actions) = default_history_actions.get(state_id) {
         for &action in actions {
-          actions_to_execute.push(action);
+          current_state.actions.push(action);
         }
       }
 
@@ -456,7 +430,11 @@ fn enter_states(
                         .child_state_ids()
                         .into_iter()
                         .all(|child_state_id| {
-                          utils::is_in_final_state(state_map, &configuration, child_state_id)
+                          utils::is_in_final_state(
+                            state_map,
+                            &current_state.configuration,
+                            child_state_id,
+                          )
                         })
                       {
                         internal_queue.push_back(Event {
@@ -476,8 +454,6 @@ fn enter_states(
       };
     }
   }
-
-  actions_to_execute
 }
 
 fn compute_entry_set(
