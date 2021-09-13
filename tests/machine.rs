@@ -1,6 +1,6 @@
-mod test_machine;
+mod test_machines;
 
-use test_machine::SIMPLE_LIGHTS;
+use test_machines::SIMPLE_LIGHTS;
 
 #[test]
 pub fn machine_initial_state() {

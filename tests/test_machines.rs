@@ -6,7 +6,7 @@ pub static SIMPLE_LIGHTS: Machine = {
   let scxml_root = State::Root(RootStateNode {});
   let green = State::Atomic(AtomicStateNode {
     id: "green",
-    parent: Some("scxml::root"),
+    parent: Some(SCXML_ROOT_ID),
     always: &[],
     on: map! {
       "TIMER" => &[
@@ -24,7 +24,7 @@ pub static SIMPLE_LIGHTS: Machine = {
   });
   let yellow = State::Atomic(AtomicStateNode {
     id: "yellow",
-    parent: Some("scxml::root"),
+    parent: Some(SCXML_ROOT_ID),
     always: &[],
     on: map! {
       "TIMER" => &[
@@ -42,7 +42,7 @@ pub static SIMPLE_LIGHTS: Machine = {
   });
   let red = State::Atomic(AtomicStateNode {
     id: "red",
-    parent: Some("scxml::root"),
+    parent: Some(SCXML_ROOT_ID),
     always: &[],
     on: map! {
       "TIMER" => &[
