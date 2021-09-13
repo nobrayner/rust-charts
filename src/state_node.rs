@@ -38,6 +38,8 @@ impl Deref for State {
       Self::Root(s) => s,
       Self::Atomic(s) => s,
       Self::Compound(s) => s,
+      Self::Final(s) => s,
+      Self::Parallel(s) => s,
       _ => panic!("Not implemented yet!"),
     }
   }
@@ -86,8 +88,8 @@ impl StateNode for RootStateNode {
 pub struct AtomicStateNode {
   pub id: &'static str,
   pub parent: Option<&'static str>,
-  pub always: &'static [Transition],
-  pub on: OrderedMap<&'static str, &'static [Transition]>,
+  pub always: &'static [&'static Transition],
+  pub on: OrderedMap<&'static str, &'static [&'static Transition]>,
   pub entry: &'static [&'static Action],
   pub exit: &'static [&'static Action],
 }
@@ -105,16 +107,18 @@ impl StateNode for AtomicStateNode {
     &[]
   }
   fn eventless_transitions(&self) -> Vec<&'static Transition> {
-    self.always.iter().collect()
+    self.always.iter().map(|&t| t).collect()
   }
   fn transitions(&self) -> Vec<&'static Transition> {
-    let values = self.on.values();
-
-    values.flat_map(|v| *v).collect()
+    self
+      .on
+      .values()
+      .flat_map(|&ts| ts.iter().map(|&t| t))
+      .collect()
   }
   fn on(&self, event_name: &str) -> Vec<&'static Transition> {
     match self.on.get(event_name) {
-      Some(&transitions) => transitions.iter().collect(),
+      Some(&transitions) => transitions.iter().map(|&t| t).collect(),
       None => vec![],
     }
   }
@@ -129,8 +133,8 @@ impl StateNode for AtomicStateNode {
 pub struct CompoundStateNode {
   pub id: &'static str,
   pub parent: Option<&'static str>,
-  pub always: &'static [Transition],
-  pub on: OrderedMap<&'static str, &'static [Transition]>,
+  pub always: &'static [&'static Transition],
+  pub on: OrderedMap<&'static str, &'static [&'static Transition]>,
   pub initial: Option<&'static Transition>,
   pub states: &'static [&'static str],
   pub entry: &'static [&'static Action],
@@ -150,16 +154,18 @@ impl StateNode for CompoundStateNode {
     self.states
   }
   fn eventless_transitions(&self) -> Vec<&'static Transition> {
-    self.always.iter().collect()
+    self.always.iter().map(|&t| t).collect()
   }
   fn transitions(&self) -> Vec<&'static Transition> {
-    let values = self.on.values();
-
-    values.flat_map(|v| *v).collect()
+    self
+      .on
+      .values()
+      .flat_map(|&t| t.iter().map(|&t| t))
+      .collect()
   }
   fn on(&self, event_name: &str) -> Vec<&'static Transition> {
     match self.on.get(event_name) {
-      Some(&transitions) => transitions.iter().collect(),
+      Some(&transitions) => transitions.iter().map(|&t| t).collect(),
       None => vec![],
     }
   }

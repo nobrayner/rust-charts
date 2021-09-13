@@ -10,7 +10,7 @@ pub static SIMPLE_LIGHTS: Machine = {
     always: &[],
     on: map! {
       "TIMER" => &[
-        Transition {
+        &Transition {
           targets: &["yellow"],
           actions: &[],
           guard: None,
@@ -28,7 +28,7 @@ pub static SIMPLE_LIGHTS: Machine = {
     always: &[],
     on: map! {
       "TIMER" => &[
-        Transition {
+        &Transition {
           targets: &["red"],
           actions: &[],
           guard: None,
@@ -40,13 +40,22 @@ pub static SIMPLE_LIGHTS: Machine = {
     entry: &[],
     exit: &[],
   });
-  let red = State::Atomic(AtomicStateNode {
+  let red = State::Compound(CompoundStateNode {
     id: "red",
     parent: Some(SCXML_ROOT_ID),
     always: &[],
     on: map! {
       "TIMER" => &[
-        Transition {
+        &Transition {
+          targets: &["green"],
+          actions: &[],
+          guard: None,
+          kind: TransitionKind::External,
+          source: "red",
+        },
+      ],
+      "done.state.red" => &[
+        &Transition {
           targets: &["green"],
           actions: &[],
           guard: None,
@@ -55,6 +64,74 @@ pub static SIMPLE_LIGHTS: Machine = {
         },
       ],
     },
+    initial: Some(&Transition {
+      targets: &["red.walk"],
+      actions: &[],
+      guard: None,
+      kind: TransitionKind::External,
+      source: "red",
+    }),
+    states: &["red.walk", "red.wait", "red.stop", "red.timeout"],
+    entry: &[],
+    exit: &[],
+  });
+  let red_walk = State::Atomic(AtomicStateNode {
+    id: "red.walk",
+    parent: Some("red"),
+    always: &[],
+    on: map! {
+      "COUNTDOWN" => &[
+        &Transition {
+          targets: &["red.wait"],
+          actions: &[],
+          guard: None,
+          kind: TransitionKind::External,
+          source: "red.walk",
+        },
+      ],
+    },
+    entry: &[],
+    exit: &[],
+  });
+  let red_wait = State::Atomic(AtomicStateNode {
+    id: "red.wait",
+    parent: Some("red"),
+    always: &[],
+    on: map! {
+      "COUNTDOWN" => &[
+        &Transition {
+          targets: &["red.stop"],
+          actions: &[],
+          guard: None,
+          kind: TransitionKind::External,
+          source: "red.wait",
+        },
+      ],
+    },
+    entry: &[],
+    exit: &[],
+  });
+  let red_stop = State::Atomic(AtomicStateNode {
+    id: "red.stop",
+    parent: Some("red"),
+    always: &[],
+    on: map! {
+      "TIMEOUT" => &[
+        &Transition {
+          targets: &["red.timeout"],
+          actions: &[],
+          guard: None,
+          kind: TransitionKind::External,
+          source: "red.stop",
+        },
+      ],
+    },
+    entry: &[],
+    exit: &[],
+  });
+  let red_timeout = State::Final(FinalStateNode {
+    id: "red.timeout",
+    parent: Some("red"),
     entry: &[],
     exit: &[],
   });
@@ -74,6 +151,10 @@ pub static SIMPLE_LIGHTS: Machine = {
       "green" => green,
       "yellow" => yellow,
       "red" => red,
+      "red.walk" => red_walk,
+      "red.wait" => red_wait,
+      "red.stop" => red_stop,
+      "red.timeout" => red_timeout,
     },
   }
 };

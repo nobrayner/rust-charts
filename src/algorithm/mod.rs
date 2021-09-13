@@ -201,6 +201,7 @@ fn select_eventless_transitions(
       if let Some(state) = state_map.get(state_id) {
         match state {
           StateNode::Atomic(_) => true,
+          StateNode::Final(_) => true,
           _ => false,
         }
       } else {
@@ -250,6 +251,7 @@ fn select_transitions(
       if let Some(state) = state_map.get(state_id) {
         match state {
           StateNode::Atomic(_) => true,
+          StateNode::Final(_) => true,
           _ => false,
         }
       } else {
