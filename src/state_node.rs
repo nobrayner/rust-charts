@@ -233,9 +233,9 @@ impl StateNodeTrait for FinalStateNode {
 pub struct ParallelStateNode {
   pub id: &'static str,
   pub parent: &'static str,
-  pub always: &'static [Transition],
-  pub on: OrderedMap<&'static str, &'static [Transition]>,
-  pub initial: Option<&'static Transition>,
+  pub always: &'static [&'static Transition],
+  pub on: OrderedMap<&'static str, &'static [&'static Transition]>,
+  pub initial: &'static Transition,
   pub states: &'static [&'static str],
   pub history_states: &'static [&'static str],
   pub entry: &'static [&'static Action],
@@ -249,23 +249,24 @@ impl StateNodeTrait for ParallelStateNode {
     Some(self.parent)
   }
   fn initial(&self) -> Option<&'static Transition> {
-    // TODO: Figure out how to make this hard-coded instead of provided...
-    self.initial
+    Some(self.initial)
   }
   fn child_state_ids(&self) -> &'static [&'static str] {
     self.states
   }
   fn eventless_transitions(&self) -> Vec<&'static Transition> {
-    self.always.iter().collect()
+    self.always.iter().map(|&t| t).collect()
   }
   fn transitions(&self) -> Vec<&'static Transition> {
-    let values = self.on.values();
-
-    values.flat_map(|v| *v).collect()
+    self
+      .on
+      .values()
+      .flat_map(|&t| t.iter().map(|&t| t))
+      .collect()
   }
   fn on(&self, event_name: &str) -> Vec<&'static Transition> {
     match self.on.get(event_name) {
-      Some(&transitions) => transitions.iter().collect(),
+      Some(&transitions) => transitions.iter().map(|&t| t).collect(),
       None => vec![],
     }
   }

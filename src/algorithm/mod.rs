@@ -481,7 +481,7 @@ fn enter_states(
 fn compute_entry_set(
   state_map: &OrderedMap<&'static str, StateNode>,
   enabled_transitions: &[&Transition],
-  current_state: &mut State,
+  current_state: &State,
 ) -> (
   Vec<&'static str>,
   Vec<&'static str>,
@@ -687,7 +687,7 @@ fn add_ancestor_states_to_enter(
 fn get_transition_domain(
   state_map: &OrderedMap<&'static str, StateNode>,
   transition: &Transition,
-  current_state: &mut State,
+  current_state: &State,
 ) -> Option<&'static str> {
   let transition_state_ids = get_effective_target_states(state_map, transition, current_state);
 
@@ -729,7 +729,7 @@ fn get_transition_domain(
 fn get_effective_target_states(
   state_map: &OrderedMap<&'static str, StateNode>,
   transition: &Transition,
-  current_state: &mut State,
+  current_state: &State,
 ) -> Vec<&'static str> {
   let mut targets = vec![];
 
@@ -759,8 +759,6 @@ fn find_lcca(
   state_map: &OrderedMap<&'static str, StateNode>,
   state_list: Vec<&'static str>,
 ) -> Option<&'static str> {
-  let mut lcca = None;
-
   for &ancestor_id in utils::get_proper_ancestor_ids(state_map, state_list[0], None)
     .iter()
     .filter(|&&state_id| {
@@ -780,9 +778,10 @@ fn find_lcca(
       .iter()
       .all(|&s| utils::is_descendant(state_map, s, ancestor_id))
     {
-      lcca = Some(ancestor_id);
+      return Some(ancestor_id);
     }
   }
 
-  lcca
+  // Technically should never happen, as all state nodes have the scxml root
+  None
 }

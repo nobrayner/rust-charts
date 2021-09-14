@@ -87,7 +87,14 @@ pub fn is_in_final_state(
   if let Some(state) = state_map.get(state_id) {
     match state {
       StateNode::Compound(_) => state.child_state_ids().into_iter().any(|child_id| {
-        is_in_final_state(state_map, configuration, child_id) && configuration.contains(child_id)
+        if let Some(child) = state_map.get(child_id) {
+          match child {
+            StateNode::Final(_) => configuration.contains(child_id),
+            _ => false,
+          }
+        } else {
+          false
+        }
       }),
       StateNode::Parallel(_) => state
         .child_state_ids()

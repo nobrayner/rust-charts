@@ -306,3 +306,148 @@ pub static FAN: Machine = {
     },
   }
 };
+
+pub static PARALLEL: Machine = {
+  use rust_charts::*;
+
+  let scxml_root = StateNode::Root(RootStateNode {});
+  let steps = StateNode::Parallel(ParallelStateNode {
+    id: "steps",
+    parent: SCXML_ROOT_ID,
+    always: &[],
+    on: map! {
+      "done.state.steps" => &[
+        &Transition {
+          targets: &["complete"],
+          actions: &[],
+          guard: None,
+          kind: TransitionKind::External,
+          source: "steps",
+        },
+      ],
+    },
+    initial: &Transition {
+      targets: &["steps.one", "steps.two"],
+      actions: &[],
+      guard: None,
+      kind: TransitionKind::External,
+      source: "steps",
+    },
+    states: &["steps.one", "steps.two"],
+    history_states: &[],
+    entry: &[],
+    exit: &[],
+  });
+  let steps_one = StateNode::Compound(CompoundStateNode {
+    id: "steps.one",
+    parent: "steps",
+    always: &[],
+    on: map! {},
+    history_states: &[],
+    initial: Some(&Transition {
+      targets: &["steps.one.start"],
+      actions: &[],
+      guard: None,
+      kind: TransitionKind::External,
+      source: "steps.one",
+    }),
+    states: &["steps.one.start", "steps.one.done"],
+    entry: &[],
+    exit: &[],
+  });
+  let steps_one_start = StateNode::Atomic(AtomicStateNode {
+    id: "steps.one.start",
+    parent: "steps.one",
+    always: &[],
+    on: map! {
+      "ONE_DONE" => &[
+        &Transition {
+          targets: &["steps.one.done"],
+          actions: &[],
+          guard: None,
+          kind: TransitionKind::External,
+          source: "steps.one.start",
+        },
+      ],
+    },
+    entry: &[],
+    exit: &[],
+  });
+  let steps_one_done = StateNode::Final(FinalStateNode {
+    id: "steps.one.done",
+    parent: "steps.one",
+    entry: &[],
+    exit: &[],
+  });
+  let steps_two = StateNode::Compound(CompoundStateNode {
+    id: "steps.two",
+    parent: "steps",
+    always: &[],
+    on: map! {},
+    history_states: &[],
+    initial: Some(&Transition {
+      targets: &["steps.two.start"],
+      actions: &[],
+      guard: None,
+      kind: TransitionKind::External,
+      source: "steps.two",
+    }),
+    states: &["steps.two.start", "steps.two.done"],
+    entry: &[],
+    exit: &[],
+  });
+  let steps_two_start = StateNode::Atomic(AtomicStateNode {
+    id: "steps.two.start",
+    parent: "steps.two",
+    always: &[],
+    on: map! {
+      "TWO_DONE" => &[
+        &Transition {
+          targets: &["steps.two.done"],
+          actions: &[],
+          guard: None,
+          kind: TransitionKind::External,
+          source: "steps.two.start",
+        },
+      ],
+    },
+    entry: &[],
+    exit: &[],
+  });
+  let steps_two_done = StateNode::Final(FinalStateNode {
+    id: "steps.two.done",
+    parent: "steps.two",
+    entry: &[],
+    exit: &[],
+  });
+  let complete = StateNode::Atomic(AtomicStateNode {
+    id: "complete",
+    parent: SCXML_ROOT_ID,
+    always: &[],
+    on: map! {},
+    entry: &[],
+    exit: &[],
+  });
+
+  Machine {
+    id: "parallel",
+    initial: Transition {
+      targets: &["steps"],
+      actions: &[],
+      guard: None,
+      kind: TransitionKind::External,
+      source: "",
+    },
+    states: map! {
+      "scxml::root" => scxml_root,
+      "steps" => steps,
+      "steps.one" => steps_one,
+      "steps.one.start" => steps_one_start,
+      "steps.one.done" => steps_one_done,
+      "steps.two" => steps_two,
+      "steps.two.start" => steps_two_start,
+      "steps.two.done" => steps_two_done,
+      "complete" => complete,
+    },
+  }
+};

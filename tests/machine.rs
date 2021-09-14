@@ -2,17 +2,17 @@ mod test_machines;
 
 use std::collections::HashMap;
 
-use test_machines::{FAN, SIMPLE_LIGHTS};
+use test_machines::{FAN, PARALLEL, SIMPLE_LIGHTS};
 
 #[test]
-pub fn machine_initial_state() {
+pub fn initial_state() {
   let initial_state = SIMPLE_LIGHTS.initial_state();
 
   assert_eq!(initial_state.configuration, vec!["green"]);
 }
 
 #[test]
-pub fn machine_simple_transition() {
+pub fn transition() {
   let state = rust_charts::State {
     configuration: vec!["green"],
     actions: vec![],
@@ -25,7 +25,7 @@ pub fn machine_simple_transition() {
 }
 
 #[test]
-pub fn child_final_state() {
+pub fn final_state() {
   let mut state = rust_charts::State {
     configuration: vec!["red", "red.stop"],
     actions: vec![],
@@ -58,6 +58,27 @@ pub fn history_state() {
     vec!["on.second", "on"],
     "correctly enters historical configuration"
   );
+}
+
+#[test]
+pub fn parallel_state() {
+  let mut state = PARALLEL.initial_state();
+  assert_eq!(
+    state.configuration,
+    vec![
+      "steps",
+      "steps.one",
+      "steps.one.start",
+      "steps.two",
+      "steps.two.start",
+    ]
+  );
+
+  state = PARALLEL.transition(state, "ONE_DONE");
+  println!("{:?}", state.configuration);
+  state = PARALLEL.transition(state, "TWO_DONE");
+  println!("{:?}", state.configuration);
+  assert_eq!(state.configuration, vec!["complete"]);
 }
 
 // #[test]
