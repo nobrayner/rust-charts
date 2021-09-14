@@ -1,6 +1,8 @@
 mod test_machines;
 
-use test_machines::SIMPLE_LIGHTS;
+use std::collections::HashMap;
+
+use test_machines::{FAN, SIMPLE_LIGHTS};
 
 #[test]
 pub fn machine_initial_state() {
@@ -10,18 +12,52 @@ pub fn machine_initial_state() {
 }
 
 #[test]
-pub fn machine() {
-  let mut state = SIMPLE_LIGHTS.initial_state();
-  state = SIMPLE_LIGHTS.transition(state, "TIMER");
-  state = SIMPLE_LIGHTS.transition(state, "TIMER");
+pub fn machine_simple_transition() {
+  let state = rust_charts::State {
+    configuration: vec!["green"],
+    actions: vec![],
+    history: HashMap::new(),
+  };
 
-  assert_eq!(state.configuration, vec!["red", "red.walk"]);
+  let yellow_state = SIMPLE_LIGHTS.transition(state, "TIMER");
 
-  state = SIMPLE_LIGHTS.transition(state, "COUNTDOWN");
-  state = SIMPLE_LIGHTS.transition(state, "COUNTDOWN");
+  assert_eq!(yellow_state.configuration, vec!["yellow"]);
+}
+
+#[test]
+pub fn child_final_state() {
+  let mut state = rust_charts::State {
+    configuration: vec!["red", "red.stop"],
+    actions: vec![],
+    history: HashMap::new(),
+  };
+
   state = SIMPLE_LIGHTS.transition(state, "TIMEOUT");
 
   assert_eq!(state.configuration, vec!["green"]);
+}
+
+#[test]
+pub fn history_state() {
+  let mut state = FAN.initial_state();
+  state = FAN.transition(state, "POWER");
+  assert_eq!(state.configuration, vec!["on.first", "on"]);
+
+  state = FAN.transition(state, "SWITCH");
+  state = FAN.transition(state, "POWER");
+  assert_eq!(state.configuration, vec!["off"]);
+  assert_eq!(
+    format!("{:?}", state.history),
+    "{\"on.hist\": [\"on.second\"]}",
+    "correctly stores historical configuration"
+  );
+
+  state = FAN.transition(state, "POWER");
+  assert_eq!(
+    state.configuration,
+    vec!["on.second", "on"],
+    "correctly enters historical configuration"
+  );
 }
 
 // #[test]

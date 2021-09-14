@@ -7,7 +7,7 @@ pub const SCXML_ROOT_ID: &str = "scxml::root";
 
 // TODO: onDone and onError transitions
 
-pub trait StateNode {
+pub trait StateNodeTrait {
   fn id(&self) -> &'static str;
   fn initial(&self) -> Option<&'static Transition>;
   fn parent(&self) -> Option<&'static str>;
@@ -16,13 +16,14 @@ pub trait StateNode {
   fn eventless_transitions(&self) -> Vec<&'static Transition>;
   /// Transitions for this state node that are associated with an event
   fn transitions(&self) -> Vec<&'static Transition>;
-  /// Transitions associated with the provided event name
+  /// Transitions associated with the provided event name (includes done.* and error.* events)
   fn on(&self, event_name: &str) -> Vec<&'static Transition>;
+  fn history_state_ids(&self) -> &'static [&'static str];
   fn entry_actions(&self) -> Vec<&'static Action>;
   fn exit_actions(&self) -> Vec<&'static Action>;
 }
 
-pub enum State {
+pub enum StateNode {
   Root(RootStateNode),
   Atomic(AtomicStateNode),
   Compound(CompoundStateNode),
@@ -30,8 +31,8 @@ pub enum State {
   Parallel(ParallelStateNode),
   History(HistoryStateNode),
 }
-impl Deref for State {
-  type Target = dyn StateNode;
+impl Deref for StateNode {
+  type Target = dyn StateNodeTrait;
 
   fn deref(&self) -> &Self::Target {
     match self {
@@ -44,7 +45,7 @@ impl Deref for State {
     }
   }
 }
-impl fmt::Debug for State {
+impl fmt::Debug for StateNode {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self {
       Self::Root(_) => write!(f, "<StateNode \"{}\">", SCXML_ROOT_ID),
@@ -58,7 +59,7 @@ impl fmt::Debug for State {
 }
 
 pub struct RootStateNode {}
-impl StateNode for RootStateNode {
+impl StateNodeTrait for RootStateNode {
   fn id(&self) -> &'static str {
     SCXML_ROOT_ID
   }
@@ -80,6 +81,9 @@ impl StateNode for RootStateNode {
   fn on(&self, _: &str) -> Vec<&'static Transition> {
     vec![]
   }
+  fn history_state_ids(&self) -> &'static [&'static str] {
+    &[]
+  }
   fn entry_actions(&self) -> Vec<&'static Action> {
     vec![]
   }
@@ -96,7 +100,7 @@ pub struct AtomicStateNode {
   pub entry: &'static [&'static Action],
   pub exit: &'static [&'static Action],
 }
-impl StateNode for AtomicStateNode {
+impl StateNodeTrait for AtomicStateNode {
   fn id(&self) -> &'static str {
     self.id
   }
@@ -125,6 +129,9 @@ impl StateNode for AtomicStateNode {
       None => vec![],
     }
   }
+  fn history_state_ids(&self) -> &'static [&'static str] {
+    &[]
+  }
   fn entry_actions(&self) -> Vec<&'static Action> {
     self.entry.iter().map(|&a| a).collect()
   }
@@ -140,10 +147,11 @@ pub struct CompoundStateNode {
   pub on: OrderedMap<&'static str, &'static [&'static Transition]>,
   pub initial: Option<&'static Transition>,
   pub states: &'static [&'static str],
+  pub history_states: &'static [&'static str],
   pub entry: &'static [&'static Action],
   pub exit: &'static [&'static Action],
 }
-impl StateNode for CompoundStateNode {
+impl StateNodeTrait for CompoundStateNode {
   fn id(&self) -> &'static str {
     self.id
   }
@@ -172,6 +180,9 @@ impl StateNode for CompoundStateNode {
       None => vec![],
     }
   }
+  fn history_state_ids(&self) -> &'static [&'static str] {
+    self.history_states
+  }
   fn entry_actions(&self) -> Vec<&'static Action> {
     self.entry.iter().map(|&a| a).collect()
   }
@@ -186,7 +197,7 @@ pub struct FinalStateNode {
   pub entry: &'static [&'static Action],
   pub exit: &'static [&'static Action],
 }
-impl StateNode for FinalStateNode {
+impl StateNodeTrait for FinalStateNode {
   fn id(&self) -> &'static str {
     self.id
   }
@@ -208,6 +219,9 @@ impl StateNode for FinalStateNode {
   fn on(&self, _: &str) -> Vec<&'static Transition> {
     vec![]
   }
+  fn history_state_ids(&self) -> &'static [&'static str] {
+    &[]
+  }
   fn entry_actions(&self) -> Vec<&'static Action> {
     self.entry.iter().map(|&a| a).collect()
   }
@@ -223,10 +237,11 @@ pub struct ParallelStateNode {
   pub on: OrderedMap<&'static str, &'static [Transition]>,
   pub initial: Option<&'static Transition>,
   pub states: &'static [&'static str],
+  pub history_states: &'static [&'static str],
   pub entry: &'static [&'static Action],
   pub exit: &'static [&'static Action],
 }
-impl StateNode for ParallelStateNode {
+impl StateNodeTrait for ParallelStateNode {
   fn id(&self) -> &'static str {
     self.id
   }
@@ -254,6 +269,9 @@ impl StateNode for ParallelStateNode {
       None => vec![],
     }
   }
+  fn history_state_ids(&self) -> &'static [&'static str] {
+    self.history_states
+  }
   fn entry_actions(&self) -> Vec<&'static Action> {
     self.entry.iter().map(|&a| a).collect()
   }
@@ -272,7 +290,7 @@ pub struct HistoryStateNode {
   pub kind: HistoryKind,
   pub transition: &'static Transition,
 }
-impl StateNode for HistoryStateNode {
+impl StateNodeTrait for HistoryStateNode {
   fn id(&self) -> &'static str {
     self.id
   }
@@ -293,6 +311,9 @@ impl StateNode for HistoryStateNode {
   }
   fn on(&self, _: &str) -> Vec<&'static Transition> {
     vec![]
+  }
+  fn history_state_ids(&self) -> &'static [&'static str] {
+    &[]
   }
   fn entry_actions(&self) -> Vec<&'static Action> {
     vec![]

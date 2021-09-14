@@ -1,7 +1,7 @@
 use phf;
 use std::{collections::HashMap, fmt};
 
-use crate::{algorithm, event::Event, state::State, state_node::State as StateNode, Transition};
+use crate::{algorithm, event::Event, state::State, state_node::StateNode, Transition};
 
 pub struct Machine {
   pub id: &'static str,

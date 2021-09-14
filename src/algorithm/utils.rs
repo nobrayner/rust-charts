@@ -1,6 +1,6 @@
 use phf::OrderedMap;
 
-use crate::{event::Event, state_node::State as StateNode, transition::Transition};
+use crate::{event::Event, state_node::StateNode, transition::Transition};
 
 pub fn is_descendant(
   state_map: &OrderedMap<&'static str, StateNode>,
@@ -105,7 +105,7 @@ mod tests {
   use super::*;
   use crate::{
     map,
-    state_node::{AtomicStateNode, CompoundStateNode, State as StateNode},
+    state_node::{AtomicStateNode, CompoundStateNode, StateNode},
     RootStateNode, SCXML_ROOT_ID,
   };
 
@@ -118,6 +118,7 @@ mod tests {
       on: map! {},
       initial: None,
       states: &["grandparent.parent"],
+      history_states: &[],
       entry: &[],
       exit: &[],
     });
@@ -128,6 +129,7 @@ mod tests {
       on: map! {},
       initial: None,
       states: &["grandparent.parent.child"],
+      history_states: &[],
       entry: &[],
       exit: &[],
     });

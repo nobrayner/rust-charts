@@ -5,7 +5,7 @@ use crate::{
   action::Action,
   event::Event,
   state::State,
-  state_node::State as StateNode,
+  state_node::{HistoryKind, StateNode},
   transition::{Transition, TransitionKind},
 };
 
@@ -82,8 +82,7 @@ pub fn event_loop_step(
 
   // Invoke anything based on the event
 
-  let enabled_transitions =
-    select_transitions(state_map, &triggered_event, &current_state.configuration);
+  let enabled_transitions = select_transitions(state_map, &triggered_event, &mut current_state);
 
   if !enabled_transitions.is_empty() {
     microstep(
@@ -124,8 +123,7 @@ fn macrostep(
   let mut done = false;
 
   while done == false {
-    enabled_transitions =
-      select_eventless_transitions(state_map, event, &current_state.configuration);
+    enabled_transitions = select_eventless_transitions(state_map, event, current_state);
 
     if enabled_transitions.is_empty() {
       if internal_queue.is_empty() {
@@ -133,8 +131,7 @@ fn macrostep(
       } else {
         let maybe_event = internal_queue.pop_front();
         if let Some(internal_event) = maybe_event {
-          enabled_transitions =
-            select_transitions(state_map, &internal_event, &current_state.configuration);
+          enabled_transitions = select_transitions(state_map, &internal_event, current_state);
         }
       }
     }
@@ -175,11 +172,12 @@ fn microstep(
 fn select_eventless_transitions(
   state_map: &OrderedMap<&'static str, StateNode>,
   event: &Event,
-  configuration: &[&'static str],
+  current_state: &mut State,
 ) -> Vec<&'static Transition> {
   let mut enabled_transitions = vec![];
   // TODO: document order sort?
-  let atomic_states: Vec<_> = configuration
+  let atomic_states: Vec<_> = current_state
+    .configuration
     .iter()
     .filter(|&&state_id| {
       if let Some(state) = state_map.get(state_id) {
@@ -219,17 +217,18 @@ fn select_eventless_transitions(
     }
   }
 
-  remove_conflicting_transitions(state_map, enabled_transitions, configuration)
+  remove_conflicting_transitions(state_map, enabled_transitions, current_state)
 }
 
 fn select_transitions(
   state_map: &OrderedMap<&'static str, StateNode>,
   event: &Event,
-  configuration: &[&'static str],
+  current_state: &mut State,
 ) -> Vec<&'static Transition> {
   let mut enabled_transitions = vec![];
   // TODO: document order sort?
-  let atomic_states: Vec<_> = configuration
+  let atomic_states: Vec<_> = current_state
+    .configuration
     .iter()
     .filter(|&&state_id| {
       if let Some(state) = state_map.get(state_id) {
@@ -269,13 +268,13 @@ fn select_transitions(
     }
   }
 
-  remove_conflicting_transitions(state_map, enabled_transitions, configuration)
+  remove_conflicting_transitions(state_map, enabled_transitions, current_state)
 }
 
 fn remove_conflicting_transitions(
   state_map: &OrderedMap<&'static str, StateNode>,
   enabled_transitions: Vec<&'static Transition>,
-  configuration: &[&'static str],
+  current_state: &mut State,
 ) -> Vec<&'static Transition> {
   let mut filtered_transitions = vec![];
 
@@ -284,8 +283,8 @@ fn remove_conflicting_transitions(
     let mut transitions_to_remove = vec![];
 
     for &t2 in &filtered_transitions {
-      let t1_exit_set = compute_exit_set(state_map, &vec![t1], configuration);
-      let t2_exit_set = compute_exit_set(state_map, &vec![t2], configuration);
+      let t1_exit_set = compute_exit_set(state_map, &vec![t1], current_state);
+      let t2_exit_set = compute_exit_set(state_map, &vec![t2], current_state);
 
       let has_intersection = t1_exit_set.iter().any(|t| t2_exit_set.contains(t))
         || t2_exit_set.iter().any(|t| t1_exit_set.contains(t));
@@ -320,8 +319,7 @@ fn exit_states(
   enabled_transitions: &[&Transition],
   current_state: &mut State,
 ) {
-  let state_ids_to_exit =
-    compute_exit_set(state_map, enabled_transitions, &current_state.configuration);
+  let state_ids_to_exit = compute_exit_set(state_map, enabled_transitions, current_state);
 
   for &_state_id in &state_ids_to_exit {
     // TODO: states_to_invoke
@@ -332,16 +330,40 @@ fn exit_states(
   // state_ids_to_exit = state_ids_to_exit.sort_by(exit_order);
 
   for &state_id in &state_ids_to_exit {
-    if let Some(_state) = state_map.get(state_id) {
+    if let Some(state) = state_map.get(state_id) {
       // TODO: History States
-      // for (history_id, history_kind) in state.histories() {
-      //   let filter = match history_kind {
-      //     HistoryKind::Deep => |s| match s {
-      //       StateNode::Atomic(_) => utils::is_descendant(state_map, s.id(), state_id),
-      //       _ => false,
-      //     }
-      //   }
-      // }
+      for history_id in state.history_state_ids() {
+        if let Some(StateNode::History(history)) = state_map.get(history_id) {
+          let history_configuration =
+            current_state
+              .configuration
+              .iter()
+              .fold(vec![], |mut history_config, &id| {
+                if let Some(state) = state_map.get(id) {
+                  match history.kind {
+                    HistoryKind::Deep => match state {
+                      StateNode::Atomic(_) => {
+                        if utils::is_descendant(state_map, state.id(), state_id) {
+                          history_config.push(id);
+                        }
+                      }
+                      _ => (),
+                    },
+                    HistoryKind::Shallow => {
+                      if let Some(parent) = state.parent() {
+                        if parent == state_id {
+                          history_config.push(id);
+                        }
+                      }
+                    }
+                  }
+                }
+
+                history_config
+              });
+          current_state.update_history(history_id, history_configuration);
+        }
+      }
     }
   }
   for &state_id in &state_ids_to_exit {
@@ -361,16 +383,16 @@ fn exit_states(
 fn compute_exit_set(
   state_map: &OrderedMap<&'static str, StateNode>,
   enabled_transitions: &[&Transition],
-  configuration: &[&'static str],
+  current_state: &mut State,
 ) -> Vec<&'static str> {
   let mut state_ids_to_exit = vec![];
 
   for &transition in enabled_transitions {
     if !transition.targets.is_empty() {
-      let maybe_domain = get_transition_domain(state_map, transition);
+      let maybe_domain = get_transition_domain(state_map, transition, current_state);
 
       if let Some(domain) = maybe_domain {
-        for &state_id in configuration {
+        for &state_id in &current_state.configuration {
           if utils::is_descendant(state_map, state_id, domain) {
             state_ids_to_exit.push(state_id);
           }
@@ -389,7 +411,7 @@ fn enter_states(
   current_state: &mut State,
 ) {
   let (state_ids_to_enter, state_ids_for_default_entry, default_history_actions) =
-    compute_entry_set(state_map, enabled_transitions);
+    compute_entry_set(state_map, enabled_transitions, current_state);
 
   // TODO: Sort by `entry_order`
   for state_id in state_ids_to_enter {
@@ -459,6 +481,7 @@ fn enter_states(
 fn compute_entry_set(
   state_map: &OrderedMap<&'static str, StateNode>,
   enabled_transitions: &[&Transition],
+  current_state: &mut State,
 ) -> (
   Vec<&'static str>,
   Vec<&'static str>,
@@ -476,13 +499,14 @@ fn compute_entry_set(
         &mut state_ids_to_enter,
         &mut state_ids_for_default_entry,
         &mut default_history_actions,
+        current_state,
       );
     }
 
-    let maybe_ancestor_id = get_transition_domain(state_map, transition);
+    let maybe_ancestor_id = get_transition_domain(state_map, transition, current_state);
 
     if let Some(ancestor_id) = maybe_ancestor_id {
-      for state_id in get_effective_target_states(state_map, transition) {
+      for state_id in get_effective_target_states(state_map, transition, current_state) {
         add_ancestor_states_to_enter(
           state_map,
           state_id,
@@ -490,6 +514,7 @@ fn compute_entry_set(
           &mut state_ids_to_enter,
           &mut state_ids_for_default_entry,
           &mut default_history_actions,
+          current_state,
         );
       }
     }
@@ -508,14 +533,12 @@ fn add_descendent_states_to_enter(
   state_ids_to_enter: &mut Vec<&'static str>,
   state_ids_for_default_entry: &mut Vec<&'static str>,
   default_history_actions: &mut HashMap<&'static str, &'static [&'static Action]>,
+  current_state: &State,
 ) {
-  // FIXME:
-  let history_value: HashMap<&'static str, Vec<&'static str>> = HashMap::new();
-
   if let Some(state) = state_map.get(state_id) {
     match state {
       StateNode::History(_) => {
-        if let Some(history_state_ids) = history_value.get(state_id) {
+        if let Some(history_state_ids) = current_state.history.get(state_id) {
           for history_state_id in history_state_ids {
             add_descendent_states_to_enter(
               state_map,
@@ -523,6 +546,7 @@ fn add_descendent_states_to_enter(
               state_ids_to_enter,
               state_ids_for_default_entry,
               default_history_actions,
+              current_state,
             );
           }
           if let Some(parent_id) = state.parent() {
@@ -534,6 +558,7 @@ fn add_descendent_states_to_enter(
                 state_ids_to_enter,
                 state_ids_for_default_entry,
                 default_history_actions,
+                current_state,
               )
             }
           }
@@ -548,6 +573,7 @@ fn add_descendent_states_to_enter(
               state_ids_to_enter,
               state_ids_for_default_entry,
               default_history_actions,
+              current_state,
             );
           }
 
@@ -562,6 +588,7 @@ fn add_descendent_states_to_enter(
                 state_ids_to_enter,
                 state_ids_for_default_entry,
                 default_history_actions,
+                current_state,
               );
             }
           }
@@ -579,6 +606,7 @@ fn add_descendent_states_to_enter(
               state_ids_to_enter,
               state_ids_for_default_entry,
               default_history_actions,
+              current_state,
             );
           }
 
@@ -590,6 +618,7 @@ fn add_descendent_states_to_enter(
               state_ids_to_enter,
               state_ids_for_default_entry,
               default_history_actions,
+              current_state,
             );
           }
         }
@@ -608,6 +637,7 @@ fn add_descendent_states_to_enter(
               state_ids_to_enter,
               state_ids_for_default_entry,
               default_history_actions,
+              current_state,
             );
           }
         }
@@ -624,6 +654,7 @@ fn add_ancestor_states_to_enter(
   state_ids_to_enter: &mut Vec<&'static str>,
   state_ids_for_default_entry: &mut Vec<&'static str>,
   default_history_actions: &mut HashMap<&'static str, &'static [&'static Action]>,
+  current_state: &State,
 ) {
   for ancestor_id in utils::get_proper_ancestor_ids(state_map, state_id, Some(ancestor_id)) {
     if let Some(ancestor) = state_map.get(ancestor_id) {
@@ -642,6 +673,7 @@ fn add_ancestor_states_to_enter(
                 state_ids_to_enter,
                 state_ids_for_default_entry,
                 default_history_actions,
+                current_state,
               );
             }
           }
@@ -655,8 +687,9 @@ fn add_ancestor_states_to_enter(
 fn get_transition_domain(
   state_map: &OrderedMap<&'static str, StateNode>,
   transition: &Transition,
+  current_state: &mut State,
 ) -> Option<&'static str> {
-  let transition_state_ids = get_effective_target_states(state_map, transition);
+  let transition_state_ids = get_effective_target_states(state_map, transition, current_state);
 
   let lcca = |mut transition_state_ids| {
     let mut state_list = vec![transition.source];
@@ -696,22 +729,20 @@ fn get_transition_domain(
 fn get_effective_target_states(
   state_map: &OrderedMap<&'static str, StateNode>,
   transition: &Transition,
+  current_state: &mut State,
 ) -> Vec<&'static str> {
-  // FIXME:
-  let history_value: HashMap<&'static str, Vec<&'static str>> = HashMap::new();
-
   let mut targets = vec![];
 
   for &target_state_id in transition.targets {
     if let Some(target_state) = state_map.get(target_state_id) {
       match target_state {
         StateNode::History(_) => {
-          if let Some(history_state_ids) = history_value.get(target_state_id) {
+          if let Some(history_state_ids) = current_state.history.get(target_state_id) {
             history_state_ids
               .iter()
-              .for_each(|&state_id| targets.push(state_id))
+              .for_each(|&state_id| targets.push(state_id));
           } else {
-            get_effective_target_states(state_map, target_state.transitions()[0])
+            get_effective_target_states(state_map, target_state.transitions()[0], current_state)
               .iter()
               .for_each(|&state_id| targets.push(state_id));
           }
