@@ -1,26 +1,49 @@
 use std::fmt;
 
-use crate::{action::Action, event::Event};
-
 #[derive(Debug, PartialEq)]
 pub enum TransitionKind {
   External,
   Internal,
 }
 
+#[derive(PartialEq)]
 pub struct Transition {
-  pub targets: &'static [&'static str],
-  pub actions: &'static [&'static Action],
-  pub guard: Option<fn(/* context type */ &Event) -> bool>,
-  pub kind: TransitionKind,
-  pub source: &'static str,
+  targets: Vec<String>,
+  actions: Vec<String>,
+  guard: Option<String>,
+  kind: TransitionKind,
+  source: String,
 }
-impl PartialEq for Transition {
-  fn eq(&self, other: &Self) -> bool {
-    self.targets == other.targets
-      && self.actions == other.actions
-      && self.kind == other.kind
-      && self.source == other.source
+impl Transition {
+  pub fn new(
+    targets: Vec<String>,
+    actions: Vec<String>,
+    guard: Option<String>,
+    kind: TransitionKind,
+    source: String,
+  ) -> Self {
+    Self {
+      targets,
+      actions,
+      guard,
+      kind,
+      source,
+    }
+  }
+  pub fn targets(&self) -> &[String] {
+    &self.targets
+  }
+  pub fn actions(&self) -> &[String] {
+    &self.actions
+  }
+  pub fn guard_id(&self) -> Option<&String> {
+    self.guard.as_ref()
+  }
+  pub fn kind(&self) -> &TransitionKind {
+    &self.kind
+  }
+  pub fn source(&self) -> &String {
+    &self.source
   }
 }
 impl fmt::Debug for Transition {
@@ -39,16 +62,5 @@ impl fmt::Debug for Transition {
       .field("kind", &self.kind)
       .field("source", &self.source)
       .finish()
-  }
-}
-impl Transition {
-  pub fn stub() -> Self {
-    Transition {
-      targets: &[],
-      actions: &[],
-      guard: None,
-      kind: TransitionKind::External,
-      source: "",
-    }
   }
 }
