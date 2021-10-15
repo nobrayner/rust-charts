@@ -35,8 +35,8 @@ pub fn get_proper_ancestor_ids<'s>(
   let mut ancestors = vec![];
   let mut ancestor_found = maybe_ancestor_id.is_none();
   let ancestor_id = match maybe_ancestor_id {
-    Some(id) => &String::from(id),
-    None => &String::from(""),
+    Some(id) => String::from(id),
+    None => String::from(""),
   };
 
   if state_id == ancestor_id {
@@ -46,7 +46,7 @@ pub fn get_proper_ancestor_ids<'s>(
   let mut marker = mappings.state(state_id).parent();
 
   while let Some(parent_id) = marker {
-    if parent_id != ancestor_id {
+    if parent_id.clone() != ancestor_id {
       ancestors.push(parent_id);
       marker = mappings.state(parent_id).parent();
     } else {

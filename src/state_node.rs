@@ -2,12 +2,12 @@ use std::{collections::HashMap, fmt, ops::Deref};
 
 use crate::transition::Transition;
 
-pub const SCXML_ROOT_ID: String = String::from("scxml::root");
+pub const SCXML_ROOT_ID: &str = "scxml::root";
 
 // TODO: onDone and onError transitions
 
 pub trait StateNodeTrait {
-  fn id(&self) -> &String;
+  fn id(&self) -> &str;
   fn initial(&self) -> Option<&Transition>;
   fn parent(&self) -> Option<&String>;
   fn child_state_ids(&self) -> &[String];
@@ -57,8 +57,8 @@ impl fmt::Debug for StateNode {
 
 pub struct RootStateNode {}
 impl StateNodeTrait for RootStateNode {
-  fn id(&self) -> &String {
-    &SCXML_ROOT_ID
+  fn id(&self) -> &str {
+    SCXML_ROOT_ID
   }
   fn parent(&self) -> Option<&String> {
     None
@@ -95,7 +95,7 @@ pub struct AtomicStateNode {
   pub exit: Vec<String>,
 }
 impl StateNodeTrait for AtomicStateNode {
-  fn id(&self) -> &String {
+  fn id(&self) -> &str {
     &self.id
   }
   fn parent(&self) -> Option<&String> {
@@ -139,7 +139,7 @@ pub struct CompoundStateNode {
   pub exit: Vec<String>,
 }
 impl StateNodeTrait for CompoundStateNode {
-  fn id(&self) -> &String {
+  fn id(&self) -> &str {
     &self.id
   }
   fn parent(&self) -> Option<&String> {
@@ -178,7 +178,7 @@ pub struct FinalStateNode {
   pub exit: Vec<String>,
 }
 impl StateNodeTrait for FinalStateNode {
-  fn id(&self) -> &String {
+  fn id(&self) -> &str {
     &self.id
   }
   fn initial(&self) -> Option<&Transition> {
@@ -219,7 +219,7 @@ pub struct ParallelStateNode {
   pub exit: Vec<String>,
 }
 impl StateNodeTrait for ParallelStateNode {
-  fn id(&self) -> &String {
+  fn id(&self) -> &str {
     &self.id
   }
   fn parent(&self) -> Option<&String> {
@@ -267,7 +267,7 @@ impl HistoryStateNode {
   }
 }
 impl StateNodeTrait for HistoryStateNode {
-  fn id(&self) -> &String {
+  fn id(&self) -> &str {
     &self.id
   }
   fn initial(&self) -> Option<&'static Transition> {

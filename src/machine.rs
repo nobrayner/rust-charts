@@ -22,13 +22,13 @@ impl Machine {
   ) -> Self {
     Self {
       id: String::from(id),
-      initial: Transition {
-        targets: vec![initial],
-        actions: vec![],
-        guard: None,
-        kind: crate::TransitionKind::Internal,
-        source: SCXML_ROOT_ID,
-      },
+      initial: Transition::new(
+        vec![initial],
+        vec![],
+        None,
+        crate::TransitionKind::Internal,
+        String::from(SCXML_ROOT_ID),
+      ),
       states,
       actions,
       guards,
