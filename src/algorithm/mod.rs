@@ -369,7 +369,7 @@ fn compute_exit_set<'s>(
 
       if let Some(domain) = maybe_domain {
         for state_id in &current_state.configuration {
-          if utils::is_descendant(mappings, state_id, domain) {
+          if utils::is_descendant(mappings, state_id, &domain) {
             state_ids_to_exit.push(state_id.clone());
           }
         }
@@ -392,7 +392,7 @@ fn enter_states(
   // TODO: Sort by `entry_order`
   for state_id in state_ids_to_enter {
     let state = mappings.state(&state_id);
-    current_state.add_configuration(state_id);
+    current_state.add_configuration(state_id.clone());
 
     // TODO: states_to_invoke
     // states_to_invoke.push(state_id);
@@ -401,7 +401,7 @@ fn enter_states(
       current_state.add_action(action_id);
     }
 
-    if state_ids_for_default_entry.contains(&&*state_id) {
+    if state_ids_for_default_entry.contains(&state_id) {
       if let Some(transition) = state.initial() {
         for action_id in transition.actions() {
           current_state.add_action(action_id);
@@ -424,28 +424,23 @@ fn enter_states(
           });
 
           if let Some(grandparent_id) = mappings.state(parent_id).parent() {
-            if let grandparent = mappings.state(grandparent_id) {
-              match grandparent {
-                StateNode::Parallel(_) => {
-                  if grandparent
-                    .child_state_ids()
-                    .into_iter()
-                    .all(|child_state_id| {
-                      utils::is_in_final_state(
-                        mappings,
-                        &current_state.configuration,
-                        child_state_id,
-                      )
-                    })
-                  {
-                    internal_queue.push_back(Event {
-                      name: String::from("done.state.") + grandparent_id,
-                      data: HashMap::new(),
-                    })
-                  }
+            let grandparent = mappings.state(grandparent_id);
+            match grandparent {
+              StateNode::Parallel(_) => {
+                if grandparent
+                  .child_state_ids()
+                  .into_iter()
+                  .all(|child_state_id| {
+                    utils::is_in_final_state(mappings, &current_state.configuration, child_state_id)
+                  })
+                {
+                  internal_queue.push_back(Event {
+                    name: String::from("done.state.") + grandparent_id,
+                    data: HashMap::new(),
+                  })
                 }
-                _ => (),
               }
+              _ => (),
             }
           }
         }
@@ -459,7 +454,7 @@ fn compute_entry_set<'s>(
   mappings: &'s MachineMappings,
   enabled_transitions: &'s [&Transition],
   current_state: &State,
-) -> (Vec<String>, Vec<&'s str>, HashMap<String, &'s [String]>) {
+) -> (Vec<String>, Vec<String>, HashMap<String, &'s [String]>) {
   let mut state_ids_to_enter = vec![];
   let mut state_ids_for_default_entry = vec![];
   let mut default_history_actions = HashMap::new();
@@ -482,8 +477,8 @@ fn compute_entry_set<'s>(
       for state_id in get_effective_target_states(mappings, transition, current_state) {
         add_ancestor_states_to_enter(
           mappings,
-          &state_id,
-          ancestor_id,
+          state_id,
+          ancestor_id.clone(),
           &mut state_ids_to_enter,
           &mut state_ids_for_default_entry,
           &mut default_history_actions,
@@ -504,7 +499,7 @@ fn add_descendent_states_to_enter<'s>(
   mappings: &'s MachineMappings,
   state_id: String,
   state_ids_to_enter: &mut Vec<String>,
-  state_ids_for_default_entry: &mut Vec<&'s str>,
+  state_ids_for_default_entry: &mut Vec<String>,
   default_history_actions: &mut HashMap<String, &'s [String]>,
   current_state: &State,
 ) {
@@ -525,8 +520,8 @@ fn add_descendent_states_to_enter<'s>(
           for history_state_id in history_state_ids {
             add_ancestor_states_to_enter(
               mappings,
-              history_state_id,
-              parent_id,
+              history_state_id.clone(),
+              parent_id.clone(),
               state_ids_to_enter,
               state_ids_for_default_entry,
               default_history_actions,
@@ -555,8 +550,8 @@ fn add_descendent_states_to_enter<'s>(
           for target_state_id in transition.targets() {
             add_ancestor_states_to_enter(
               mappings,
-              target_state_id,
-              parent_id,
+              target_state_id.clone(),
+              parent_id.clone(),
               state_ids_to_enter,
               state_ids_for_default_entry,
               default_history_actions,
@@ -567,8 +562,8 @@ fn add_descendent_states_to_enter<'s>(
       }
     }
     StateNode::Compound(state) => {
-      state_ids_to_enter.push(String::from(state_id));
-      state_ids_for_default_entry.push(&state_id);
+      state_ids_to_enter.push(state_id.clone());
+      state_ids_for_default_entry.push(state_id.clone());
 
       if let Some(transition) = state.initial() {
         for target_state_id in transition.targets() {
@@ -585,8 +580,8 @@ fn add_descendent_states_to_enter<'s>(
         for target_state_id in transition.targets() {
           add_ancestor_states_to_enter(
             mappings,
-            target_state_id,
-            &state_id,
+            target_state_id.clone(),
+            state_id.clone(),
             state_ids_to_enter,
             state_ids_for_default_entry,
             default_history_actions,
@@ -623,7 +618,7 @@ fn add_ancestor_states_to_enter<'s>(
   state_id: String,
   ancestor_id: String,
   state_ids_to_enter: &mut Vec<String>,
-  state_ids_for_default_entry: &mut Vec<&'s str>,
+  state_ids_for_default_entry: &mut Vec<String>,
   default_history_actions: &mut HashMap<String, &'s [String]>,
   current_state: &State,
 ) {
@@ -657,7 +652,7 @@ fn get_transition_domain<'s>(
   mappings: &'s MachineMappings,
   transition: &'s Transition,
   current_state: &State,
-) -> Option<&'s String> {
+) -> Option<String> {
   let transition_state_ids = get_effective_target_states(mappings, transition, current_state);
 
   let lcca = |mut transition_state_ids| {
@@ -677,7 +672,7 @@ fn get_transition_domain<'s>(
             .iter()
             .all(|s| utils::is_descendant(mappings, s, transition.source()))
           {
-            Some(transition.source())
+            Some(transition.source().clone())
           } else {
             lcca(transition_state_ids)
           }
@@ -706,7 +701,7 @@ fn get_effective_target_states<'s>(
         } else {
           get_effective_target_states(mappings, target_state.target(), current_state)
             .iter()
-            .for_each(|&state_id| targets.push(state_id.clone()));
+            .for_each(|state_id| targets.push(state_id.clone()));
         }
       }
       _ => targets.push(target_state_id.clone()),
@@ -716,8 +711,8 @@ fn get_effective_target_states<'s>(
   targets
 }
 
-fn find_lcca<'s>(state_map: &'s MachineMappings, state_list: Vec<String>) -> Option<&'s String> {
-  for ancestor_id in utils::get_proper_ancestor_ids(state_map, &state_list[0], None)
+fn find_lcca<'s>(state_map: &'s MachineMappings, state_list: Vec<String>) -> Option<String> {
+  for &ancestor_id in utils::get_proper_ancestor_ids(state_map, &state_list[0], None)
     .iter()
     .filter(|&state_id| {
       match state_map.state(state_id) {
@@ -730,9 +725,9 @@ fn find_lcca<'s>(state_map: &'s MachineMappings, state_list: Vec<String>) -> Opt
   {
     if state_list[1..]
       .iter()
-      .all(|&s| utils::is_descendant(state_map, &s, ancestor_id))
+      .all(|s| utils::is_descendant(state_map, &s, ancestor_id))
     {
-      return Some(ancestor_id);
+      return Some(ancestor_id.clone());
     }
   }
 
