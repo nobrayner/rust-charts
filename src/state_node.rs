@@ -1,26 +1,23 @@
-use phf::OrderedMap;
-use std::{fmt, ops::Deref};
+use std::{collections::HashMap, fmt, ops::Deref};
 
-use crate::{action::Action, transition::Transition};
+use crate::transition::Transition;
 
-pub const SCXML_ROOT_ID: &str = "scxml::root";
+pub const SCXML_ROOT_ID: String = String::from("scxml::root");
 
 // TODO: onDone and onError transitions
 
 pub trait StateNodeTrait {
-  fn id(&self) -> &'static str;
-  fn initial(&self) -> Option<&'static Transition>;
-  fn parent(&self) -> Option<&'static str>;
-  fn child_state_ids(&self) -> &[&'static str];
+  fn id(&self) -> &String;
+  fn initial(&self) -> Option<&Transition>;
+  fn parent(&self) -> Option<&String>;
+  fn child_state_ids(&self) -> &[String];
   /// Transitions for this state node that aren't associated with any events (always transitions)
-  fn eventless_transitions(&self) -> Vec<&'static Transition>;
-  /// Transitions for this state node that are associated with an event
-  fn transitions(&self) -> Vec<&'static Transition>;
+  fn eventless_transitions(&self) -> &[Transition];
   /// Transitions associated with the provided event name (includes done.* and error.* events)
-  fn on(&self, event_name: &str) -> Vec<&'static Transition>;
-  fn history_state_ids(&self) -> &'static [&'static str];
-  fn entry_actions(&self) -> Vec<&'static Action>;
-  fn exit_actions(&self) -> Vec<&'static Action>;
+  fn on(&self, event_name: &str) -> &[Transition];
+  fn history_state_ids(&self) -> &[String];
+  fn entry_actions(&self) -> &[String];
+  fn exit_actions(&self) -> &[String];
 }
 
 pub enum StateNode {
@@ -60,224 +57,197 @@ impl fmt::Debug for StateNode {
 
 pub struct RootStateNode {}
 impl StateNodeTrait for RootStateNode {
-  fn id(&self) -> &'static str {
-    SCXML_ROOT_ID
+  fn id(&self) -> &String {
+    &SCXML_ROOT_ID
   }
-  fn parent(&self) -> Option<&'static str> {
+  fn parent(&self) -> Option<&String> {
     None
   }
-  fn initial(&self) -> Option<&'static Transition> {
+  fn initial(&self) -> Option<&Transition> {
     None
   }
-  fn child_state_ids(&self) -> &[&'static str] {
+  fn child_state_ids(&self) -> &[String] {
     &[]
   }
-  fn eventless_transitions(&self) -> Vec<&'static Transition> {
-    vec![]
-  }
-  fn transitions(&self) -> Vec<&'static Transition> {
-    vec![]
-  }
-  fn on(&self, _: &str) -> Vec<&'static Transition> {
-    vec![]
-  }
-  fn history_state_ids(&self) -> &'static [&'static str] {
+  fn eventless_transitions(&self) -> &[Transition] {
     &[]
   }
-  fn entry_actions(&self) -> Vec<&'static Action> {
-    vec![]
+  fn on(&self, _: &str) -> &[Transition] {
+    &[]
   }
-  fn exit_actions(&self) -> Vec<&'static Action> {
-    vec![]
+  fn history_state_ids(&self) -> &[String] {
+    &[]
+  }
+  fn entry_actions(&self) -> &[String] {
+    &[]
+  }
+  fn exit_actions(&self) -> &[String] {
+    &[]
   }
 }
 
 pub struct AtomicStateNode {
-  pub id: &'static str,
-  pub parent: &'static str,
-  pub always: &'static [&'static Transition],
-  pub on: OrderedMap<&'static str, &'static [&'static Transition]>,
-  pub entry: &'static [&'static Action],
-  pub exit: &'static [&'static Action],
+  pub id: String,
+  pub parent: String,
+  pub always: Vec<Transition>,
+  pub on: HashMap<String, Vec<Transition>>,
+  pub entry: Vec<String>,
+  pub exit: Vec<String>,
 }
 impl StateNodeTrait for AtomicStateNode {
-  fn id(&self) -> &'static str {
-    self.id
+  fn id(&self) -> &String {
+    &self.id
   }
-  fn parent(&self) -> Option<&'static str> {
-    Some(self.parent)
+  fn parent(&self) -> Option<&String> {
+    Some(&self.parent)
   }
-  fn initial(&self) -> Option<&'static Transition> {
+  fn initial(&self) -> Option<&Transition> {
     None
   }
-  fn child_state_ids(&self) -> &'static [&'static str] {
+  fn child_state_ids(&self) -> &[String] {
     &[]
   }
-  fn eventless_transitions(&self) -> Vec<&'static Transition> {
-    self.always.iter().map(|&t| t).collect()
+  fn eventless_transitions(&self) -> &[Transition] {
+    &self.always
   }
-  fn transitions(&self) -> Vec<&'static Transition> {
-    self
-      .on
-      .values()
-      .flat_map(|&ts| ts.iter().map(|&t| t))
-      .collect()
-  }
-  fn on(&self, event_name: &str) -> Vec<&'static Transition> {
+  fn on(&self, event_name: &str) -> &[Transition] {
     match self.on.get(event_name) {
-      Some(&transitions) => transitions.iter().map(|&t| t).collect(),
-      None => vec![],
+      Some(transitions) => transitions,
+      None => &[],
     }
   }
-  fn history_state_ids(&self) -> &'static [&'static str] {
+  fn history_state_ids(&self) -> &[String] {
     &[]
   }
-  fn entry_actions(&self) -> Vec<&'static Action> {
-    self.entry.iter().map(|&a| a).collect()
+  fn entry_actions(&self) -> &[String] {
+    &self.entry
   }
-  fn exit_actions(&self) -> Vec<&'static Action> {
-    self.exit.iter().map(|&a| a).collect()
+  fn exit_actions(&self) -> &[String] {
+    &self.exit
   }
 }
 
 pub struct CompoundStateNode {
-  pub id: &'static str,
-  pub parent: &'static str,
-  pub always: &'static [&'static Transition],
-  pub on: OrderedMap<&'static str, &'static [&'static Transition]>,
-  pub initial: Option<&'static Transition>,
-  pub states: &'static [&'static str],
-  pub history_states: &'static [&'static str],
-  pub entry: &'static [&'static Action],
-  pub exit: &'static [&'static Action],
+  pub id: String,
+  pub parent: String,
+  pub always: Vec<Transition>,
+  pub on: HashMap<String, Vec<Transition>>,
+  pub initial: Transition,
+  pub states: Vec<String>,
+  pub history_states: Vec<String>,
+  pub entry: Vec<String>,
+  pub exit: Vec<String>,
 }
 impl StateNodeTrait for CompoundStateNode {
-  fn id(&self) -> &'static str {
-    self.id
+  fn id(&self) -> &String {
+    &self.id
   }
-  fn parent(&self) -> Option<&'static str> {
-    Some(self.parent)
+  fn parent(&self) -> Option<&String> {
+    Some(&self.parent)
   }
-  fn initial(&self) -> Option<&'static Transition> {
-    self.initial
+  fn initial(&self) -> Option<&Transition> {
+    Some(&self.initial)
   }
-  fn child_state_ids(&self) -> &'static [&'static str] {
-    self.states
+  fn child_state_ids(&self) -> &[String] {
+    &self.states
   }
-  fn eventless_transitions(&self) -> Vec<&'static Transition> {
-    self.always.iter().map(|&t| t).collect()
+  fn eventless_transitions(&self) -> &[Transition] {
+    &self.always
   }
-  fn transitions(&self) -> Vec<&'static Transition> {
-    self
-      .on
-      .values()
-      .flat_map(|&t| t.iter().map(|&t| t))
-      .collect()
-  }
-  fn on(&self, event_name: &str) -> Vec<&'static Transition> {
+  fn on(&self, event_name: &str) -> &[Transition] {
     match self.on.get(event_name) {
-      Some(&transitions) => transitions.iter().map(|&t| t).collect(),
-      None => vec![],
+      Some(transitions) => transitions,
+      None => &[],
     }
   }
-  fn history_state_ids(&self) -> &'static [&'static str] {
-    self.history_states
+  fn history_state_ids(&self) -> &[String] {
+    &self.history_states
   }
-  fn entry_actions(&self) -> Vec<&'static Action> {
-    self.entry.iter().map(|&a| a).collect()
+  fn entry_actions(&self) -> &[String] {
+    &self.entry
   }
-  fn exit_actions(&self) -> Vec<&'static Action> {
-    self.exit.iter().map(|&a| a).collect()
+  fn exit_actions(&self) -> &[String] {
+    &self.exit
   }
 }
 
 pub struct FinalStateNode {
-  pub id: &'static str,
-  pub parent: &'static str,
-  pub entry: &'static [&'static Action],
-  pub exit: &'static [&'static Action],
+  pub id: String,
+  pub parent: String,
+  pub entry: Vec<String>,
+  pub exit: Vec<String>,
 }
 impl StateNodeTrait for FinalStateNode {
-  fn id(&self) -> &'static str {
-    self.id
+  fn id(&self) -> &String {
+    &self.id
   }
-  fn initial(&self) -> Option<&'static Transition> {
+  fn initial(&self) -> Option<&Transition> {
     None
   }
-  fn parent(&self) -> Option<&'static str> {
-    Some(self.parent)
+  fn parent(&self) -> Option<&String> {
+    Some(&self.parent)
   }
-  fn child_state_ids(&self) -> &[&'static str] {
+  fn child_state_ids(&self) -> &[String] {
     &[]
   }
-  fn eventless_transitions(&self) -> Vec<&'static Transition> {
-    vec![]
-  }
-  fn transitions(&self) -> Vec<&'static Transition> {
-    vec![]
-  }
-  fn on(&self, _: &str) -> Vec<&'static Transition> {
-    vec![]
-  }
-  fn history_state_ids(&self) -> &'static [&'static str] {
+  fn eventless_transitions(&self) -> &[Transition] {
     &[]
   }
-  fn entry_actions(&self) -> Vec<&'static Action> {
-    self.entry.iter().map(|&a| a).collect()
+  fn on(&self, _: &str) -> &[Transition] {
+    &[]
   }
-  fn exit_actions(&self) -> Vec<&'static Action> {
-    self.exit.iter().map(|&a| a).collect()
+  fn history_state_ids(&self) -> &[String] {
+    &[]
+  }
+  fn entry_actions(&self) -> &[String] {
+    &self.entry
+  }
+  fn exit_actions(&self) -> &[String] {
+    &self.exit
   }
 }
 
 pub struct ParallelStateNode {
-  pub id: &'static str,
-  pub parent: &'static str,
-  pub always: &'static [&'static Transition],
-  pub on: OrderedMap<&'static str, &'static [&'static Transition]>,
-  pub initial: &'static Transition,
-  pub states: &'static [&'static str],
-  pub history_states: &'static [&'static str],
-  pub entry: &'static [&'static Action],
-  pub exit: &'static [&'static Action],
+  pub id: String,
+  pub parent: String,
+  pub always: Vec<Transition>,
+  pub on: HashMap<String, Vec<Transition>>,
+  pub initial: Transition,
+  pub states: Vec<String>,
+  pub history_states: Vec<String>,
+  pub entry: Vec<String>,
+  pub exit: Vec<String>,
 }
 impl StateNodeTrait for ParallelStateNode {
-  fn id(&self) -> &'static str {
-    self.id
+  fn id(&self) -> &String {
+    &self.id
   }
-  fn parent(&self) -> Option<&'static str> {
-    Some(self.parent)
+  fn parent(&self) -> Option<&String> {
+    Some(&self.parent)
   }
-  fn initial(&self) -> Option<&'static Transition> {
-    Some(self.initial)
+  fn initial(&self) -> Option<&Transition> {
+    Some(&self.initial)
   }
-  fn child_state_ids(&self) -> &'static [&'static str] {
-    self.states
+  fn child_state_ids(&self) -> &[String] {
+    &self.states
   }
-  fn eventless_transitions(&self) -> Vec<&'static Transition> {
-    self.always.iter().map(|&t| t).collect()
+  fn eventless_transitions(&self) -> &[Transition] {
+    &self.always
   }
-  fn transitions(&self) -> Vec<&'static Transition> {
-    self
-      .on
-      .values()
-      .flat_map(|&t| t.iter().map(|&t| t))
-      .collect()
-  }
-  fn on(&self, event_name: &str) -> Vec<&'static Transition> {
+  fn on(&self, event_name: &str) -> &[Transition] {
     match self.on.get(event_name) {
-      Some(&transitions) => transitions.iter().map(|&t| t).collect(),
-      None => vec![],
+      Some(transitions) => transitions,
+      None => &[],
     }
   }
-  fn history_state_ids(&self) -> &'static [&'static str] {
-    self.history_states
+  fn history_state_ids(&self) -> &[String] {
+    &self.history_states
   }
-  fn entry_actions(&self) -> Vec<&'static Action> {
-    self.entry.iter().map(|&a| a).collect()
+  fn entry_actions(&self) -> &[String] {
+    &self.entry
   }
-  fn exit_actions(&self) -> Vec<&'static Action> {
-    self.exit.iter().map(|&a| a).collect()
+  fn exit_actions(&self) -> &[String] {
+    &self.exit
   }
 }
 
@@ -286,40 +256,42 @@ pub enum HistoryKind {
   Deep,
 }
 pub struct HistoryStateNode {
-  pub id: &'static str,
-  pub parent: &'static str,
+  pub id: String,
+  pub parent: String,
   pub kind: HistoryKind,
-  pub transition: &'static Transition,
+  pub transition: Transition,
+}
+impl HistoryStateNode {
+  pub fn target(&self) -> &Transition {
+    &self.transition
+  }
 }
 impl StateNodeTrait for HistoryStateNode {
-  fn id(&self) -> &'static str {
-    self.id
+  fn id(&self) -> &String {
+    &self.id
   }
   fn initial(&self) -> Option<&'static Transition> {
     None
   }
-  fn parent(&self) -> Option<&'static str> {
-    Some(self.parent)
+  fn parent(&self) -> Option<&String> {
+    Some(&self.parent)
   }
-  fn child_state_ids(&self) -> &[&'static str] {
+  fn child_state_ids(&self) -> &[String] {
     &[]
   }
-  fn eventless_transitions(&self) -> Vec<&'static Transition> {
-    vec![]
-  }
-  fn transitions(&self) -> Vec<&'static Transition> {
-    vec![self.transition]
-  }
-  fn on(&self, _: &str) -> Vec<&'static Transition> {
-    vec![]
-  }
-  fn history_state_ids(&self) -> &'static [&'static str] {
+  fn eventless_transitions(&self) -> &[Transition] {
     &[]
   }
-  fn entry_actions(&self) -> Vec<&'static Action> {
-    vec![]
+  fn on(&self, _: &str) -> &[Transition] {
+    &[]
   }
-  fn exit_actions(&self) -> Vec<&'static Action> {
-    vec![]
+  fn history_state_ids(&self) -> &[String] {
+    &[]
+  }
+  fn entry_actions(&self) -> &[String] {
+    &[]
+  }
+  fn exit_actions(&self) -> &[String] {
+    &[]
   }
 }
