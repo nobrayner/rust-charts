@@ -14,3 +14,5 @@ pub use transition::{Transition, TransitionKind};
 
 #[macro_use]
 mod map;
+
+pub use lazy_static::lazy_static;
