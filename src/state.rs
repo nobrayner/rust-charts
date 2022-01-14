@@ -1,5 +1,3 @@
-use crate::machine::Machine;
-
 pub struct State {
     configuration: Vec<String>,
 }
