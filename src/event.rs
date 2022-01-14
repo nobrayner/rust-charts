@@ -1,15 +1,16 @@
-use std::collections::HashMap;
+use std::{hash::Hash, cmp::{Eq, PartialEq}};
 
-#[derive(Debug)]
-pub struct Event {
-  pub(crate) name: String,
-  pub(crate) data: HashMap<String, String>,
+pub trait EventIdentifier: Hash + PartialEq + Eq {}
+
+pub enum EventKind {
+    Platform,
+    Internal,
+    External,
 }
-impl Event {
-  pub fn new() -> Self {
-    Event {
-      name: String::from(""),
-      data: HashMap::new(),
-    }
-  }
+
+pub struct Event<E: EventIdentifier> {
+    data: E,
+    origin: String,
+    kind: EventKind,
+    // Maybe other SCXML stuff
 }
