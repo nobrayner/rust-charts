@@ -1,7 +1,10 @@
-mod state;
+mod machine_state;
 mod machine;
 mod event;
 mod schematic;
+mod types;
 
-pub use event::EventIdentifier;
-pub use schematic::{Schematic, SchematicBuilder, State, StateKind, StateIdentifier};
+pub use types::*;
+pub use schematic::{Schematic, State, StateKind};
+pub use machine::{Machine, Parts};
+pub use machine_state::MachineState;

@@ -1,6 +1,4 @@
-use std::{hash::Hash, cmp::{Eq, PartialEq}};
-
-pub trait EventIdentifier: Hash + PartialEq + Eq {}
+use crate::types::EventIdentifier;
 
 pub enum EventKind {
     Platform,
@@ -14,3 +12,4 @@ pub struct Event<E: EventIdentifier> {
     kind: EventKind,
     // Maybe other SCXML stuff
 }
+
