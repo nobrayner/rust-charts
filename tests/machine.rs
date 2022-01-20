@@ -7,7 +7,7 @@ use simple_light_machine::*;
 pub fn atomic_transitions() {
     let machine = Machine::from(&SIMPLE_LIGHT_SCHEMATIC, &SIMPLE_LIGHT_PARTS);
 
-    let start_state = MachineState::from(vec![SimpleLightState::Green]);
+    let start_state = MachineState::from_configuration(vec![SimpleLightState::Green]);
     let next_state = machine.transition(start_state, SimpleLightEvent::Timer);
 
     assert!(next_state.is_in(SimpleLightState::Yellow));

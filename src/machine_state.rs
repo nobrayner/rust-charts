@@ -4,7 +4,7 @@ pub struct MachineState<S> where S: StateIdentifier {
     configuration: Vec<S>,
 }
 impl <S> MachineState<S> where S: StateIdentifier {
-    pub fn from(configuration: Vec<S>) -> Self {
+    pub fn from_configuration(configuration: Vec<S>) -> Self {
         Self {
             configuration,
         }
