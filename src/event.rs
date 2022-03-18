@@ -1,4 +1,4 @@
-use crate::types::EventIdentifier;
+use crate::types::EventPayload;
 
 pub enum EventKind {
     Platform,
@@ -6,8 +6,8 @@ pub enum EventKind {
     External,
 }
 
-pub struct Event<E: EventIdentifier> {
-    data: E,
+pub struct Event<E: EventPayload> {
+    payload: E::Wrapper,
     origin: String,
     kind: EventKind,
     // Maybe other SCXML stuff

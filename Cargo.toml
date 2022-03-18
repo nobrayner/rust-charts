@@ -1,5 +1,5 @@
 [package]
-name = "rust-charts"
+name = "rust_charts"
 version = "0.1.0"
 authors = ["Braydon Hall <40751395+nobrayner@users.noreply.github.com>"]
 edition = "2018"

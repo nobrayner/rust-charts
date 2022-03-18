@@ -1,10 +1,16 @@
+mod algorithm;
+mod event;
 mod machine_state;
 mod machine;
-mod event;
 mod schematic;
 mod types;
 
-pub use types::*;
-pub use schematic::{Schematic, State, StateKind};
-pub use machine::{Machine, Parts};
-pub use machine_state::MachineState;
+pub mod prelude {
+    pub use std::collections::HashMap;
+    pub use std::any::TypeId;
+
+    pub use crate::types::*;
+    pub use crate::schematic::*;
+    pub use crate::machine::{Machine, Parts};
+    pub use crate::machine_state::MachineState;
+}

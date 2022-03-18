@@ -1,9 +1,16 @@
-use crate::types::StateIdentifier;
+use crate::types::StateTrait;
 
-pub struct MachineState<S> where S: StateIdentifier {
+pub struct MachineState<S> where S: StateTrait {
     configuration: Vec<S>,
 }
-impl <S> MachineState<S> where S: StateIdentifier {
+impl <S> MachineState<S> where S: StateTrait {
+    /// TESTING PURPOSES ONLY
+    pub(crate) fn new() -> Self {
+        MachineState {
+            configuration: vec![],
+        }
+    }
+
     pub fn from_configuration(configuration: Vec<S>) -> Self {
         Self {
             configuration,
@@ -20,6 +27,7 @@ impl <S> MachineState<S> where S: StateIdentifier {
 #[cfg(test)]
 mod unit_tests {
     use super::*;
+    use crate::schematic::StateKind;
     use std::hash::Hash;
     use std::cmp::{PartialEq, Eq};
 
@@ -28,7 +36,19 @@ mod unit_tests {
         A,
         B,
     }
-    impl StateIdentifier for ConfigState {}
+    impl StateTrait for ConfigState {
+        type Parent = ();
+
+        fn parent() -> Option<Self::Parent> {
+            None
+        }
+
+        fn kind(&self) -> StateKind {
+            match self {
+                _ => StateKind::Atomic,
+            }
+        }
+    }
 
     #[test]
     fn is_in_helper() {
