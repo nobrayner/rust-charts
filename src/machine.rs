@@ -2,6 +2,7 @@ use crate::{
     schematic::Schematic,
     types::{StateTrait, EventPayload},
     machine_state::MachineState,
+    event::{EventData, Event},
     algorithm
 };
 // use std::collections::HashMap;
@@ -52,7 +53,12 @@ where
     where
         Ev: EventPayload<Wrapper = E> + Into<E> + 'static,
     {
-        algorithm::event_loop_step(&self.schematic, state, event.into())
+        let event_data = EventData {
+            origin: "".to_string(),
+            payload: Event::Event(event.into()),
+        };
+
+        algorithm::event_loop_step(&self.schematic, state, event_data)
     }
 }
 
