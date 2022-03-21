@@ -1,4 +1,4 @@
-use crate::types::{StateTrait, EventPayload};
+use crate::types::StateTrait;
 
 // pub enum EventKind {
 //     Platform,
